@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bot-fohl-openai"
+version = "0.1"
+description = "OpenAI-based Telegram bot"
+requires-python = ">=3.12"
+dependencies = [
+    "openai",
+    "python-telegram-bot",
+    "requests",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
