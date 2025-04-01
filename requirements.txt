@@ -1,0 +1,4 @@
+# Core dependencies
+openai
+python-telegram-bot
+requests
