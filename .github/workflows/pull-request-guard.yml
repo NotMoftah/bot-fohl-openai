@@ -1,0 +1,33 @@
+name: PR Guard
+
+on:
+  pull_request:
+    types: [opened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.11.x"
+
+      - name: Install dependencies
+        run: |
+          pip install requests
+
+      - name: Run script to post comment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO_NAME: ${{ github.repository }}
+          PR_DESCRIPTION: ${{ github.event.pull_request.body }}
+        run: python .github/scripts/pull-request-guard.py
