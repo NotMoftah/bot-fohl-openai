@@ -52,4 +52,4 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.pull_request.number }}
           body: |
-            The test report artifact named **test-report** is available here: [Actions run page](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            The test report artifact named **test-report** is available [here](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
