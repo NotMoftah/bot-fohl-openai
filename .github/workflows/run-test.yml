@@ -17,7 +17,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -35,7 +35,16 @@ jobs:
           pytest --html=reports/test_report.html --self-contained-html
 
       - name: Upload test report artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-report
           path: reports/test_report.html
+
+      - name: Create or update PR comment with test summary
+        if: github.event_name == 'pull_request'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            The test report artifact named **test-report** is available here: [Actions run page](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
