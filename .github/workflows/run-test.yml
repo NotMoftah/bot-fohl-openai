@@ -1,0 +1,41 @@
+name: Run Test
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - "main"
+      - "rel/*"
+  push:
+    branches:
+      - "main"
+      - "rel/*"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install -e .
+          pip install pytest pytest-html
+
+      - name: Run tests and generate HTML report
+        run: |
+          mkdir -p reports
+          pytest --html=reports/test_report.html --self-contained-html
+
+      - name: Upload test report artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-report
+          path: reports/test_report.html
