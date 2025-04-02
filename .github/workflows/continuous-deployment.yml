@@ -11,14 +11,6 @@ on:
         options:
           - main
           - rel/*
-  pull_request:
-    branches:
-      - "main"
-      - "rel/*"
-  push:
-    branches:
-      - "main"
-      - "rel/*"
 
 permissions:
   contents: read
@@ -44,4 +36,3 @@ jobs:
           aws_region: ${{ secrets.AWS_REGION }}
           function_name: ${{ secrets.AWS_LAMBDA_NAME }}
           zip_file: lambda_function.zip
-          dry_run: true
