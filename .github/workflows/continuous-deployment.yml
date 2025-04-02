@@ -27,6 +27,7 @@ permissions:
 jobs:
   deploy:
     name: deploy lambda function
+    environment: "CI/CD"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
