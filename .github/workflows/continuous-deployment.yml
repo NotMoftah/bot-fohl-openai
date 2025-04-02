@@ -1,0 +1,38 @@
+name: Continuous Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to deploy"
+        required: true
+        default: "main"
+        type: choice
+        options:
+          - main
+          - rel/*
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  deploy:
+    name: deploy lambda function
+    environment: "CI/CD"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Zip source code
+        run: zip -r lambda_function.zip src
+
+      - name: AWS Lambda Deploy
+        uses: appleboy/lambda-action@v0.2.0
+        with:
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_region: ${{ secrets.AWS_REGION }}
+          function_name: ${{ secrets.AWS_LAMBDA_NAME }}
+          zip_file: lambda_function.zip
