@@ -3,10 +3,10 @@ name: Continuous Deployment
 on:
   workflow_dispatch:
     inputs:
-      branch:
-        description: "Branch to deploy (main or any branch starting with 'rel/'). Default is 'main'."
+      function_description:
+        description: "Description of the function"
         required: true
-        default: "main"
+        default: "Deployed by GitHub Actions"
 
 permissions:
   contents: read
@@ -23,7 +23,7 @@ jobs:
 
       - name: Validate branch
         run: |
-          BRANCH="${{ github.event.inputs.branch }}"
+          BRANCH="${{ github.ref_name }}"
           # If the branch is not 'main', verify it exists and matches 'rel/*'
           if [ "$BRANCH" != "main" ]; then
             if [[ "$BRANCH" != rel/* ]]; then
@@ -49,3 +49,4 @@ jobs:
           aws_region: ${{ secrets.AWS_REGION }}
           function_name: ${{ secrets.AWS_LAMBDA_NAME }}
           zip_file: lambda_function.zip
+          description: ${{ github.event.inputs.function_description }}
