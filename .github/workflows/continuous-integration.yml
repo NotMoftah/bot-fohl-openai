@@ -1,4 +1,4 @@
-name: Run Test
+name: Continuous Integration
 
 on:
   workflow_dispatch:
@@ -16,7 +16,8 @@ permissions:
   pull-requests: write
 
 jobs:
-  test:
+  python-test-report:
+    name: Python Test Suite
     runs-on: ubuntu-latest
 
     steps:
