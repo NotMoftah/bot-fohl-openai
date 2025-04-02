@@ -4,13 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       branch:
-        description: "Branch to deploy"
+        description: "Branch to deploy (main or any branch starting with 'rel/'). Default is 'main'."
         required: true
         default: "main"
-        type: choice
-        options:
-          - main
-          - rel/*
 
 permissions:
   contents: read
@@ -25,8 +21,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Validate branch
+        run: |
+          BRANCH="${{ github.event.inputs.branch }}"
+          # If the branch is not 'main', verify it exists and matches 'rel/*'
+          if [ "$BRANCH" != "main" ]; then
+            if [[ "$BRANCH" != rel/* ]]; then
+              echo "Invalid branch. Only 'main' or branches starting with 'rel/' are allowed."
+              exit 1
+            fi
+            if ! git ls-remote --heads origin "$BRANCH" | grep -q "refs/heads/$BRANCH"; then
+              echo "Branch '$BRANCH' not found in the repository."
+              exit 1
+            fi
+          fi
+
       - name: Zip source code
-        run: zip -r lambda_function.zip src
+        run: |
+          cd src
+          zip -r ../lambda_function.zip .
 
       - name: AWS Lambda Deploy
         uses: appleboy/lambda-action@v0.2.0
