@@ -12,6 +12,7 @@ from tools import ToolRegistry, GetTimeTool, HttpRequestTool
 
 # Set up logging
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 # Initialize the context manager
@@ -30,6 +31,7 @@ def init_openai_chatbot():
     if not gpt_token:
         logger.error("GPT_TOKEN environment variable not set")
         raise ValueError("GPT_TOKEN environment variable not set")
+    logger.info("Initializing OpenAIChatBot with GPT_TOKEN and config")
 
     # Create configuration
     config = OpenAIConfig(
@@ -42,9 +44,11 @@ def init_openai_chatbot():
     )
 
     # Create chatbot
-    return OpenAIChatBot(
+    chatbot = OpenAIChatBot(
         api_key=gpt_token, context_manager=user_context_manager, config=config
     )
+    logger.info("OpenAIChatBot initialized: %s", chatbot)
+    return chatbot
 
 
 # Initialize the Telegram interface
@@ -53,6 +57,7 @@ def init_telegram_interface():
     if not bot_token:
         logger.error("BOT_TOKEN environment variable not set")
         raise ValueError("BOT_TOKEN environment variable not set")
+    logger.info("Initializing TelegramInterface with BOT_TOKEN")
 
     chatbot = init_openai_chatbot()
 
@@ -62,18 +67,26 @@ def init_telegram_interface():
     # Register message handler
     async def on_message(message: TelegramMessage) -> str:
         try:
-            # Use user_id from message for context
-            return await chatbot.send_message(str(message.userid), message.text)
+            logger.info(
+                "Received Telegram message from user %s: %s",
+                message.userid,
+                message.text,
+            )
+            response = await chatbot.send_message(str(message.userid), message.text)
+            logger.info("Response to user %s: %s", message.userid, response)
+            return response
         except Exception as e:
             logger.error(f"Error in message handler: {e}", exc_info=True)
             return "Sorry, I encountered an error processing your request."
 
     telegram.register_message_handler(on_message)
+    logger.info("TelegramInterface fully initialized and handler registered")
     return telegram
 
 
 # Lambda handler function
 async def lambda_handler_async(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
+    logger.info("Lambda handler invoked. Event: %s", event)
     try:
         # Parse the incoming update from Telegram
         body = json.loads(event.get("body", "{}"))
@@ -90,8 +103,12 @@ async def lambda_handler_async(event: Dict[str, Any], context: Any) -> Dict[str,
             logger.error("Received invalid update")
             return {"statusCode": 400, "body": "Bad Request"}
 
+        logger.info("Parsed Telegram update: %s", update)
+
         # Handle the update
         await telegram.handle_update(update)
+
+        logger.info("Update handled successfully")
 
         # Return success response
         return {"statusCode": 200, "body": "ok"}
@@ -105,5 +122,8 @@ async def lambda_handler_async(event: Dict[str, Any], context: Any) -> Dict[str,
 
 # Lambda handler entry point
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
+    logger.info("Lambda handler entry point called")
     loop = asyncio.get_event_loop()
-    return loop.run_until_complete(lambda_handler_async(event, context))
+    result = loop.run_until_complete(lambda_handler_async(event, context))
+    logger.info("Lambda handler completed with result: %s", result)
+    return result

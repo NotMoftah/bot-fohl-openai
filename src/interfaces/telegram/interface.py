@@ -32,7 +32,10 @@ class TelegramInterface:
         # Add application handlers
         self._add_handlers()
 
-        self.logger.info("TelegramInterface initialized")
+        self.logger.info(
+            "TelegramInterface initialized with bot token: %s",
+            bot_token[:6] + "..." if bot_token else None,
+        )
 
     def register_message_handler(
         self, handler: Callable[[TelegramMessage], Awaitable[str]]
@@ -44,7 +47,7 @@ class TelegramInterface:
             handler: Async function that takes a TelegramMessage and returns a string response
         """
         self.message_handler = handler
-        self.logger.info("Registered message handler")
+        self.logger.info("Registered message handler: %s", handler)
 
     async def handle_update(self, update: Update) -> None:
         """
@@ -59,7 +62,7 @@ class TelegramInterface:
                 self.application_initialized = True
                 self.logger.info("Application initialized")
 
-            self.logger.debug(f"Processing update: {update}")
+            self.logger.info("Processing update: %s", update)
             await self.application.process_update(update)
         except Exception as e:
             self.logger.error(f"Error in handle_update: {e}", exc_info=True)
@@ -69,6 +72,7 @@ class TelegramInterface:
         self.application.add_handler(
             MessageHandler(filters.TEXT & ~filters.COMMAND, self._on_message)
         )
+        self.logger.info("Added message handler for TEXT & ~COMMAND")
 
     async def _on_message(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
@@ -88,10 +92,18 @@ class TelegramInterface:
             message = TelegramMessage(update)
 
             if message.is_private_chat:
-                self.logger.debug(f"Received private message: {message}")
+                self.logger.info(
+                    "Received private message from user %s: %s",
+                    message.userid,
+                    message.text,
+                )
                 response = await self.message_handler(message)
+                self.logger.info(
+                    "Sending response to user %s: %s", message.userid, response
+                )
                 await update.message.reply_text(response)
             elif message.is_group_chat:
+                self.logger.info("Received group message: %s", message.text)
                 # Handle group chat messages if needed
                 pass
         except Exception as e:

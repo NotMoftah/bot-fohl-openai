@@ -64,15 +64,20 @@ class OpenAIChatBot:
             tool_registry: Registry for tools that can be used by the chat bot
         """
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.setLevel(logging.INFO)
         self.client = AsyncOpenAI(api_key=api_key, timeout=10)
         self.context_manager = context_manager or UserContextManager()
         self.config = config or OpenAIConfig()
         self.tool_registry = tool_registry or ToolRegistry()
         self.handlers = []
-        self.tools = list(OpenAIChatBot.DEFAULT_TOOLS)
-
-        # Add default tools to registry
-        self.logger.info("OpenAIChatBot initialized.")
+        self.tools = (
+            list(OpenAIChatBot.DEFAULT_TOOLS) + self.tool_registry.get_openai_tools()
+        )
+        self.logger.info(
+            "OpenAIChatBot initialized with model: %s, tools: %s",
+            self.config.model,
+            [t["function"]["name"] for t in self.tools],
+        )
 
     def register_external_tools(self, handler) -> None:
         """
@@ -93,10 +98,12 @@ class OpenAIChatBot:
         # For legacy handlers, keep track of them separately and add to tool registry
         if handler not in self.handlers:
             self.handlers.append(handler)
-            # Add handler tools to the list for OpenAI API
             self.tools.extend(handler.tools)
-            # Log the registration
-            self.logger.info("Registered legacy external tools handler: %s", handler)
+            self.logger.info(
+                "Registered legacy external tools handler: %s, tools: %s",
+                handler,
+                [t["function"]["name"] for t in handler.tools],
+            )
 
     def register_tool(self, tool) -> None:
         """
@@ -107,14 +114,16 @@ class OpenAIChatBot:
         """
         try:
             self.tool_registry.register_tool(tool)
-            # Update the tools list for OpenAI API
             self.tools = (
                 list(OpenAIChatBot.DEFAULT_TOOLS)
                 + self.tool_registry.get_openai_tools()
             )
-            self.logger.info(f"Registered tool: {tool.name}")
+            self.logger.info(
+                f"Registered tool: {tool.name}. Current tools: %s",
+                [t["function"]["name"] for t in self.tools],
+            )
         except Exception as e:
-            self.logger.error(f"Error registering tool: {e}")
+            self.logger.error(f"Error registering tool: {e}", exc_info=True)
             raise
 
     async def send_message(
@@ -131,19 +140,32 @@ class OpenAIChatBot:
         Returns:
             Response from the chat bot
         """
-        # Get the user's context
+        self.logger.info("[User %s] Incoming message: %s", user_id, message)
         user_context = self.context_manager.get_context(user_id)
-
-        # Add user message to history
         user_context.add_message({"role": "user", "content": message})
-        self.logger.info("[User %s] Added message to history: %s", user_id, message)
-
-        # Generate response
-        response = await self._generate_response(user_id, model or self.config.model)
-
-        # Trim history if needed
+        self.logger.info(
+            "[User %s] Added message to history. Current history length: %d",
+            user_id,
+            len(user_context.get_history()),
+        )
+        try:
+            response = await self._generate_response(
+                user_id, model or self.config.model
+            )
+        except Exception as e:
+            self.logger.error(
+                "[User %s] Error during response generation: %s",
+                user_id,
+                e,
+                exc_info=True,
+            )
+            raise
         self._trim_history(user_context)
-
+        self.logger.info(
+            "[User %s] History trimmed. Current length: %d",
+            user_id,
+            len(user_context.get_history()),
+        )
         return response
 
     async def _generate_response(self, user_id: str, model: str) -> str:
@@ -161,53 +183,55 @@ class OpenAIChatBot:
         history_with_system = user_context.get_history_with_system_message(
             self.config.system_message
         )
-
+        self.logger.info("[User %s] Generating response with model: %s", user_id, model)
         while True:
-            # Make request to OpenAI
-            response = await self.client.chat.completions.create(
-                model=model,
-                tools=self.tools,
-                messages=history_with_system,
-                n=1,
-                temperature=self.config.temperature,
-                top_p=self.config.top_p,
-                max_tokens=self.config.max_tokens,
-                frequency_penalty=self.config.frequency_penalty,
-                presence_penalty=self.config.presence_penalty,
-            )
-
-            # Break if there are no choices in the response
+            try:
+                response = await self.client.chat.completions.create(
+                    model=model,
+                    tools=self.tools,
+                    messages=history_with_system,
+                    n=1,
+                    temperature=self.config.temperature,
+                    top_p=self.config.top_p,
+                    max_tokens=self.config.max_tokens,
+                    frequency_penalty=self.config.frequency_penalty,
+                    presence_penalty=self.config.presence_penalty,
+                )
+            except Exception as e:
+                self.logger.error(
+                    "[User %s] OpenAI API call failed: %s", user_id, e, exc_info=True
+                )
+                raise
             if len(response.choices) == 0:
+                self.logger.warning(
+                    "[User %s] No choices returned from OpenAI API", user_id
+                )
                 break
-
-            # Add the assistant response to the history
             assistant_message = {
                 "role": "assistant",
                 "content": response.choices[0].message.content,
             }
-
-            # Add tool_calls if present
             if response.choices[0].message.tool_calls:
                 assistant_message["tool_calls"] = response.choices[0].message.tool_calls
-
             user_context.add_message(assistant_message)
             self.logger.info(
-                "[User %s] Added assistant response: %s",
+                "[User %s] Assistant response: %s",
                 user_id,
                 response.choices[0].message.content,
             )
-
-            # Check if there are any tool calls in the response
             tool_calls = response.choices[0].message.tool_calls
             if tool_calls is not None and len(tool_calls) > 0:
-                for tool_call in response.choices[0].message.tool_calls:
+                for tool_call in tool_calls:
                     name = tool_call.function.name
                     args = json.loads(tool_call.function.arguments)
-
-                    # Handle special case for clear_history
+                    self.logger.info(
+                        "[User %s] Tool call requested: %s with args %s",
+                        user_id,
+                        name,
+                        args,
+                    )
                     if name == "clear_history":
                         result = self._clear_history(user_id)
-                        # Refresh context after clearing
                         user_context = self.context_manager.get_context(user_id)
                         history_with_system = (
                             user_context.get_history_with_system_message(
@@ -215,14 +239,10 @@ class OpenAIChatBot:
                             )
                         )
                     else:
-                        # Call external tool
                         result = self._call_function(name, args)
-
                     self.logger.info(
-                        "[User %s] Called function %s with args %s", user_id, name, args
+                        "[User %s] Tool call result for %s: %s", user_id, name, result
                     )
-
-                    # Add function call result to history
                     user_context.add_message(
                         {
                             "role": "tool",
@@ -230,16 +250,7 @@ class OpenAIChatBot:
                             "content": str(result),
                         }
                     )
-                    self.logger.info(
-                        "[User %s] Added function result for %s: %s",
-                        user_id,
-                        name,
-                        str(result),
-                    )
-                # Continue generation loop with updated history
                 continue
-
-            # If there are no tool calls, return the response
             return response.choices[0].message.content
 
     def _call_function(self, function_name: str, args: dict) -> str:
@@ -253,25 +264,31 @@ class OpenAIChatBot:
         Returns:
             Result of the function call
         """
-        # First try the new tool registry
+        self.logger.info("Calling function: %s with args: %s", function_name, args)
         if function_name == "clear_history":
-            # Handle clear history internally
             return self._clear_history(args.get("user_id", "unknown"))
-
         try:
-            # Try to call the tool using the tool registry
             if self.tool_registry.get_tool(function_name):
                 result = self.tool_registry.call_tool(function_name, **args)
+                self.logger.info(
+                    "Function %s executed via ToolRegistry. Result: %s",
+                    function_name,
+                    result,
+                )
                 return str(result) if result is not None else ""
         except Exception as e:
-            self.logger.error(f"Error calling tool {function_name}: {e}")
-
-        # Fall back to legacy handlers if not found in registry
+            self.logger.error(
+                "Error calling tool %s: %s", function_name, e, exc_info=True
+            )
         for handler in self.handlers:
             if hasattr(handler, "has_function") and handler.has_function(function_name):
+                self.logger.info(
+                    "Function %s executed via legacy handler %s", function_name, handler
+                )
                 return handler.call_function(function_name, args)
-
-        # If the function is not found, return an error message
+        self.logger.warning(
+            "Function %s not found in any registry or handler", function_name
+        )
         return f"Function {function_name} not found."
 
     def _clear_history(self, user_id: str) -> str:
@@ -287,7 +304,6 @@ class OpenAIChatBot:
         user_context = self.context_manager.get_context(user_id)
         user_context.clear_history()
         self.logger.warning("[User %s] Cleared chat history", user_id)
-        # Re-add system message
         user_context.add_system_message(self.config.system_message)
         return "History has been cleared."
 
@@ -300,7 +316,6 @@ class OpenAIChatBot:
         """
         history = user_context.get_history()
         if len(history) > self.config.history_limit:
-            # Keep system message (if any) and the most recent messages
             if history and history[0].get("role") == "system":
                 system_message = history[0]
                 new_history = [system_message] + history[
@@ -309,3 +324,6 @@ class OpenAIChatBot:
                 user_context.history = new_history
             else:
                 user_context.history = history[-self.config.history_limit :]
+        self.logger.info(
+            "Trimmed user history to %d messages", len(user_context.get_history())
+        )
