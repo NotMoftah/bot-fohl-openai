@@ -3,7 +3,7 @@ import os
 import unittest
 
 # Add src directory to Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "src"))
 
 from unittest.mock import patch, MagicMock
 from utils.tools import TimeTools, WebTools

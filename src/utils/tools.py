@@ -56,7 +56,8 @@ class WebTools(ExternalToolsHandler):
                             "method": {
                                 "type": "string",
                                 "description": "HTTP method: GET or POST.",
-                            },                            "url": {
+                            },
+                            "url": {
                                 "type": "string",
                                 "description": "URL to send the request to.",
                             },
@@ -72,7 +73,8 @@ class WebTools(ExternalToolsHandler):
                         "required": ["method", "url"],
                         "additionalProperties": False,
                     },
-                    "strict": True,                },
+                    "strict": True,
+                },
             },
         ]
 
