@@ -56,25 +56,23 @@ class WebTools(ExternalToolsHandler):
                             "method": {
                                 "type": "string",
                                 "description": "HTTP method: GET or POST.",
-                            },
-                            "url": {
+                            },                            "url": {
                                 "type": "string",
                                 "description": "URL to send the request to.",
                             },
                             "headers": {
-                                "type": "string",
+                                "type": "object",
                                 "description": "HTTP JSON headers for the request. This is optional for GET requests.",
                             },
                             "body": {
-                                "type": "string",
+                                "type": "object",
                                 "description": "Body JSON data for POST requests. This is optional for GET requests.",
                             },
                         },
-                        "required": ["method", "url", "headers", "body"],
+                        "required": ["method", "url"],
                         "additionalProperties": False,
                     },
-                    "strict": True,
-                },
+                    "strict": True,                },
             },
         ]
 
@@ -90,7 +88,7 @@ class WebTools(ExternalToolsHandler):
         self,
         method: str,
         url: str,
-        headers: Dict[str, str],
+        headers: Optional[Dict[str, str]] = None,
         body: Optional[Dict[str, Any]] = None,
     ) -> str:
         try:

@@ -1,55 +1,97 @@
 import os
 import json
 import asyncio
+import logging
+from typing import Dict, Any
 
-from transformers import OpenAIChatBot
-from utils import LambdaLogger, TimeTools, WebTools
-from telegram_bot import TelegramMessage, FohlFehBot, LambdaRequestParser
+from core.context import UserContextManager
+from interfaces.openai import OpenAIChatBot, OpenAIConfig
+from interfaces.telegram import TelegramInterface, TelegramMessage, LambdaRequestParser
+from tools import ToolRegistry, GetTimeTool, HttpRequestTool
+
 
 # Set up logging
-logger = LambdaLogger()
+logger = logging.getLogger(__name__)
 
 
-# Get the bot token from environment variables
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-GPT_TOKEN = os.getenv("GPT_TOKEN")
+# Initialize the context manager
+user_context_manager = UserContextManager()
 
 
-# Initialize the GPT model
-language_model = OpenAIChatBot(GPT_TOKEN)
-language_model.register_external_tools(TimeTools())
-language_model.register_external_tools(WebTools())
+# Initialize the tool registry
+tool_registry = ToolRegistry()
+tool_registry.register_tool(GetTimeTool())
+tool_registry.register_tool(HttpRequestTool())
 
 
-async def on_private_message(message: TelegramMessage) -> None:
-    try:
-        return await language_model.send_message(message.text)
-    except Exception as e:
-        logger.error(f"Error in translate handler: {e}", exc_info=True)
+# Initialize the OpenAI interface
+def init_openai_chatbot():
+    gpt_token = os.getenv("GPT_TOKEN")
+    if not gpt_token:
+        logger.error("GPT_TOKEN environment variable not set")
+        raise ValueError("GPT_TOKEN environment variable not set")
+
+    # Create configuration
+    config = OpenAIConfig(
+        model=os.getenv("GPT_MODEL", "gpt-4o-mini"),
+        temperature=float(os.getenv("GPT_TEMPERATURE", "0.8")),
+        system_message=os.getenv(
+            "GPT_SYSTEM_MESSAGE",
+            "You are a helpful assistant that always responds in raw text format.",
+        ),
+    )
+
+    # Create chatbot
+    return OpenAIChatBot(
+        api_key=gpt_token, context_manager=user_context_manager, config=config
+    )
 
 
-# Initialize the bot
-bot = FohlFehBot(BOT_TOKEN)
-bot.add_private_message_handler(on_private_message)
+# Initialize the Telegram interface
+def init_telegram_interface():
+    bot_token = os.getenv("BOT_TOKEN")
+    if not bot_token:
+        logger.error("BOT_TOKEN environment variable not set")
+        raise ValueError("BOT_TOKEN environment variable not set")
+
+    chatbot = init_openai_chatbot()
+
+    # Create Telegram interface
+    telegram = TelegramInterface(bot_token)
+
+    # Register message handler
+    async def on_message(message: TelegramMessage) -> str:
+        try:
+            # Use user_id from message for context
+            return await chatbot.send_message(str(message.userid), message.text)
+        except Exception as e:
+            logger.error(f"Error in message handler: {e}", exc_info=True)
+            return "Sorry, I encountered an error processing your request."
+
+    telegram.register_message_handler(on_message)
+    return telegram
 
 
-def lambda_handler(event, context):
+# Lambda handler function
+async def lambda_handler_async(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     try:
         # Parse the incoming update from Telegram
         body = json.loads(event.get("body", "{}"))
         logger.info(f"Incoming request body: {body}")
 
+        # Get or create the Telegram interface
+        telegram = init_telegram_interface()
+
         # Create Update object from the incoming data
-        parser = LambdaRequestParser(bot.application)
+        parser = LambdaRequestParser(telegram.application)
         update = parser.parse(body)
 
         if not update:
             logger.error("Received invalid update")
             return {"statusCode": 400, "body": "Bad Request"}
 
-        # Handle the update asynchronously
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(bot.handle_update_async(update))
+        # Handle the update
+        await telegram.handle_update(update)
 
         # Return success response
         return {"statusCode": 200, "body": "ok"}
@@ -59,3 +101,9 @@ def lambda_handler(event, context):
     except Exception as e:
         logger.error(f"Unhandled error: {e}", exc_info=True)
         return {"statusCode": 500, "body": f"Error: {e}"}
+
+
+# Lambda handler entry point
+def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
+    loop = asyncio.get_event_loop()
+    return loop.run_until_complete(lambda_handler_async(event, context))
