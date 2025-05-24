@@ -19,10 +19,10 @@ logger.setLevel(logging.INFO)
 user_context_manager = UserContextManager()
 
 
-# Initialize the tool registry
-tool_registry = ToolRegistry()
-tool_registry.register_tool(GetTimeTool())
-tool_registry.register_tool(HttpRequestTool())
+# Initialize the mcp registry
+mcp_registry = ToolRegistry()
+mcp_registry.register_tool(GetTimeTool())
+mcp_registry.register_tool(HttpRequestTool())
 
 
 # Initialize the OpenAI interface
@@ -48,7 +48,7 @@ def init_openai_chatbot():
         api_key=gpt_token,
         context_manager=user_context_manager,
         config=config,
-        tool_registry=tool_registry,
+        tool_registry=mcp_registry,
     )
     logger.info("OpenAIChatBot initialized: %s", chatbot)
     return chatbot
