@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 
 from openai import AsyncOpenAI
 from core.context import UserContextManager, UserContext
-from tools import ToolRegistry, LegacyToolAdapter
+from mcp import ToolRegistry
 
 
 @dataclass

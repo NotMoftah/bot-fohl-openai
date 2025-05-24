@@ -7,7 +7,7 @@ from typing import Dict, Any
 from core.context import UserContextManager
 from interfaces.openai import OpenAIChatBot, OpenAIConfig
 from interfaces.telegram import TelegramInterface, TelegramMessage, LambdaRequestParser
-from tools import ToolRegistry, GetTimeTool, HttpRequestTool
+from mcp import ToolRegistry, GetTimeTool, HttpRequestTool
 
 
 # Set up logging
@@ -45,7 +45,10 @@ def init_openai_chatbot():
 
     # Create chatbot
     chatbot = OpenAIChatBot(
-        api_key=gpt_token, context_manager=user_context_manager, config=config
+        api_key=gpt_token,
+        context_manager=user_context_manager,
+        config=config,
+        tool_registry=tool_registry,
     )
     logger.info("OpenAIChatBot initialized: %s", chatbot)
     return chatbot

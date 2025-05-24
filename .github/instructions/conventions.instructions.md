@@ -53,7 +53,7 @@ from telegram import Update
 
 # 3. Local imports
 from core.context import UserContextManager
-from tools import ToolRegistry
+from mcp import ToolRegistry
 ```
 
 ### Error Handling Pattern

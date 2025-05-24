@@ -104,7 +104,7 @@ The bot is designed to be deployed as an AWS Lambda function:
 You can create custom tools by implementing the Tool interface or extending BaseTool:
 
 ```python
-from tools import BaseTool
+from mcp import BaseTool
 
 class MyCustomTool(BaseTool):
     @property
@@ -123,7 +123,7 @@ class MyCustomTool(BaseTool):
 Then register your tool with the OpenAI chat bot:
 
 ```python
-from tools import ToolRegistry, MyCustomTool
+from mcp import ToolRegistry, MyCustomTool
 
 # Create tool registry
 tool_registry = ToolRegistry()
