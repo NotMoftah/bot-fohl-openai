@@ -11,40 +11,11 @@ class FunctionDefinition(TypedDict):
 class ExternalFunctionsHandler:
     """
     Base class for external function handlers that can be registered with the OpenAI chat bot.
-    Legacy class maintained for backward compatibility with the old system.
     """
 
     def __init__(self):
-        """Initialize with empty functions and tools list for backward compatibility."""
+        """Initialize with empty functions list for backward compatibility."""
         self.functions: List[FunctionDefinition] = []
-        self.tools: List[FunctionDefinition] = self.functions
-
-    def __repr__(self) -> str:
-        """String representation showing registered tool names (tools or functions)."""
-        # Prefer tools if set, else fallback to functions
-        tool_list = getattr(self, "tools", None)
-        if tool_list is None:
-            tool_list = getattr(self, "functions", [])
-        names = []
-        for tool in tool_list:
-            try:
-                names.append(tool["function"]["name"])
-            except Exception:
-                pass
-        return f"{self.__class__.__name__}({names})"
-
-    def __str__(self) -> str:
-        """String representation showing registered tool names (tools or functions)."""
-        tool_list = getattr(self, "tools", None)
-        if tool_list is None:
-            tool_list = getattr(self, "functions", [])
-        names = []
-        for tool in tool_list:
-            try:
-                names.append(tool["function"]["name"])
-            except Exception:
-                pass
-        return f"{self.__class__.__name__}({names})"
 
     def has_function(self, name: str) -> bool:
         """

@@ -4,7 +4,7 @@ from .registry import BaseFunction
 
 
 class GetTimeFunction(BaseFunction):
-    """Tool to get the current time."""
+    """Function to get the current time."""
 
     @property
     def name(self) -> str:
@@ -17,7 +17,7 @@ class GetTimeFunction(BaseFunction):
     @property
     def schema(self) -> Dict[str, Any]:
         """
-        Get the JSON schema for the tool, with format parameter explicitly required.
+        Get the JSON schema for the function, with format parameter explicitly required.
         """
         return {
             "type": "object",

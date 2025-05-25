@@ -11,7 +11,7 @@ class OpenAIChatBot:
         """You are a helpful assistant that always responds in raw text format."""
     )
 
-    TOOLS = [
+    FUNCTIONTOOLS = [
         {
             "type": "function",
             "function": {
@@ -34,7 +34,7 @@ class OpenAIChatBot:
         self.logger = logging.getLogger(self.__class__.__name__)
         self.client = AsyncOpenAI(api_key=api_key, timeout=10)
         self.handlers: List[ExternalFunctionsHandler] = []
-        self.tools = list(OpenAIChatBot.TOOLS)
+        self.tools = list(OpenAIChatBot.FUNCTIONTOOLS)
         self.history = [
             {"role": "system", "content": self.INSTRUCTIONS},
         ]

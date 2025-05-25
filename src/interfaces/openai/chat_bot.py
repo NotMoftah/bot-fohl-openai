@@ -30,7 +30,7 @@ class OpenAIChatBot:
     Maintains separate conversation history for each user.
     """
 
-    DEFAULT_TOOLS = [
+    DEFAULT_FUNCTIONS = [
         {
             "type": "function",
             "function": {
@@ -71,11 +71,11 @@ class OpenAIChatBot:
         self.function_registry = function_registry or FunctionRegistry()
         self.handlers = []
         self.functions = (
-            list(OpenAIChatBot.DEFAULT_TOOLS)
+            list(OpenAIChatBot.DEFAULT_FUNCTIONS)
             + self.function_registry.get_openai_functions()
         )
         self.logger.info(
-            "OpenAIChatBot initialized with model: %s, tools: %s",
+            "OpenAIChatBot initialized with model: %s, functions: %s",
             self.config.model,
             [f["function"]["name"] for f in self.functions],
         )
@@ -116,7 +116,7 @@ class OpenAIChatBot:
         try:
             self.function_registry.register_function(function)
             self.functions = (
-                list(OpenAIChatBot.DEFAULT_TOOLS)
+                list(OpenAIChatBot.DEFAULT_FUNCTIONS)
                 + self.function_registry.get_openai_functions()
             )
             self.logger.info(

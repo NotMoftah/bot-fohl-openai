@@ -20,9 +20,9 @@ user_context_manager = UserContextManager()
 
 
 # Initialize the mcp registry
-mcp_registry = FunctionRegistry()
-mcp_registry.register_function(GetTimeFunction())
-mcp_registry.register_function(HttpRequestFunction())
+function_registry = FunctionRegistry()
+function_registry.register_function(GetTimeFunction())
+function_registry.register_function(HttpRequestFunction())
 
 
 # Initialize the OpenAI interface
@@ -48,7 +48,7 @@ def init_openai_chatbot():
         api_key=gpt_token,
         context_manager=user_context_manager,
         config=config,
-        tool_registry=mcp_registry,
+        function_registry=function_registry,
     )
     logger.info("OpenAIChatBot initialized: %s", chatbot)
     return chatbot
