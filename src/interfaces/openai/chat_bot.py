@@ -77,7 +77,7 @@ class OpenAIChatBot:
         self.logger.info(
             "OpenAIChatBot initialized with model: %s, functions: %s",
             self.config.model,
-            [f["function"]["name"] for f in self.functions],
+            self.functions,
         )
 
     def register_external_functions(self, handler) -> None:
@@ -119,10 +119,7 @@ class OpenAIChatBot:
                 list(OpenAIChatBot.DEFAULT_FUNCTIONS)
                 + self.function_registry.get_openai_functions()
             )
-            self.logger.info(
-                f"Registered function: {function.name}. Current functions: %s",
-                [f["function"]["name"] for f in self.functions],
-            )
+            self.logger.info(f"Registered function: {function.name}.")
         except Exception as e:
             self.logger.error(f"Error registering function: {e}", exc_info=True)
             raise
