@@ -9,7 +9,7 @@ from unittest.mock import patch, MagicMock
 from utils.tools import TimeTools, WebTools
 
 
-class TestTimeTools(unittest.TestCase):
+class TestTimeFunctions(unittest.TestCase):
     def setUp(self):
         self.time_tools = TimeTools()
 
@@ -35,7 +35,7 @@ class TestTimeTools(unittest.TestCase):
         mock_now.strftime.assert_called_with("%H:%M")
 
 
-class TestWebTools(unittest.TestCase):
+class TestWebFunctions(unittest.TestCase):
     def setUp(self):
         self.web_tools = WebTools()
 

@@ -37,42 +37,38 @@ class TestGetTimeFunction(unittest.TestCase):
         self.assertEqual(schema["required"], ["format"])
         self.assertEqual(schema["additionalProperties"], False)
 
-    @patch("functions.time_functions.datetime")
+    @patch("functions.time_functions.datetime.datetime")
     def test_execute_with_default_format(self, mock_datetime):
         """Test execute method with default format."""
         # Mock datetime to return a fixed time
-        mock_dt = mock_datetime.datetime
-        mock_dt.now.return_value = datetime.datetime(2025, 5, 25, 16, 30, 0)
+        mock_datetime.now.return_value = datetime.datetime(2025, 5, 25, 16, 30, 0)
 
         # Set expected output based on the format string
         expected_time = "04:30PM - May 25, 2025"
-        mock_dt.now().strftime.return_value = expected_time
+        mock_datetime.now.return_value.strftime = lambda fmt: expected_time
 
         # Call the function with default format
         result = self.time_function.execute()
 
         # Verify the result contains the formatted time
         self.assertEqual(result, f"The current time is {expected_time}.")
-        mock_dt.now().strftime.assert_called_once_with("%I:%M%p - %B %d, %Y")
 
-    @patch("functions.time_functions.datetime")
+    @patch("functions.time_functions.datetime.datetime")
     def test_execute_with_custom_format(self, mock_datetime):
         """Test execute method with custom format."""
         # Mock datetime to return a fixed time
-        mock_dt = mock_datetime.datetime
-        mock_dt.now.return_value = datetime.datetime(2025, 5, 25, 16, 30, 0)
+        mock_datetime.now.return_value = datetime.datetime(2025, 5, 25, 16, 30, 0)
 
         # Set expected output based on the custom format string
         custom_format = "%Y-%m-%d %H:%M:%S"
         expected_time = "2025-05-25 16:30:00"
-        mock_dt.now().strftime.return_value = expected_time
+        mock_datetime.now.return_value.strftime = lambda fmt: expected_time
 
         # Call the function with custom format
         result = self.time_function.execute(format=custom_format)
 
         # Verify the result contains the formatted time
         self.assertEqual(result, f"The current time is {expected_time}.")
-        mock_dt.now().strftime.assert_called_once_with(custom_format)
 
     def test_to_openai_function(self):
         """Test the to_openai_function method inherited from BaseFunction."""

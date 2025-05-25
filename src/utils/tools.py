@@ -7,6 +7,7 @@ from typing import Dict, List, Any, Optional, Literal, TypedDict
 
 class TimeTools(ExternalFunctionsHandler):
     def __init__(self) -> None:
+        super().__init__()
         self.functions: List[FunctionDefinition] = [
             {
                 "type": "function",
@@ -28,6 +29,7 @@ class TimeTools(ExternalFunctionsHandler):
                 },
             },
         ]
+        self.tools: List[FunctionDefinition] = self.functions
 
     def has_function(self, name: str) -> bool:
         return name in ["get_time"]
@@ -44,6 +46,7 @@ class TimeTools(ExternalFunctionsHandler):
 
 class WebTools(ExternalFunctionsHandler):
     def __init__(self) -> None:
+        super().__init__()
         self.functions: List[FunctionDefinition] = [
             {
                 "type": "function",
@@ -77,6 +80,7 @@ class WebTools(ExternalFunctionsHandler):
                 },
             },
         ]
+        self.tools: List[FunctionDefinition] = self.functions
 
     def has_function(self, name: str) -> bool:
         return name in ["http_request"]

@@ -14,7 +14,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "src"))
 
 from utils.tools import TimeTools, WebTools
-from core.tool_handler import ExternalToolsHandler
+from core.function_handler import ExternalFunctionsHandler
 
 
 class TestTimeToolsDetailed(unittest.TestCase):
@@ -26,7 +26,7 @@ class TestTimeToolsDetailed(unittest.TestCase):
 
     def test_inheritance(self):
         """Test that TimeTools inherits from ExternalToolsHandler."""
-        self.assertIsInstance(self.time_tools, ExternalToolsHandler)
+        self.assertIsInstance(self.time_tools, ExternalFunctionsHandler)
 
     def test_tools_structure(self):
         """Test the tools structure is correct."""
@@ -148,7 +148,7 @@ class TestWebToolsDetailed(unittest.TestCase):
 
     def test_inheritance(self):
         """Test that WebTools inherits from ExternalToolsHandler."""
-        self.assertIsInstance(self.web_tools, ExternalToolsHandler)
+        self.assertIsInstance(self.web_tools, ExternalFunctionsHandler)
 
     def test_tools_structure(self):
         """Test the tools structure is correct."""

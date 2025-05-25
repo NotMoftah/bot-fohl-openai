@@ -15,18 +15,36 @@ class ExternalFunctionsHandler:
     """
 
     def __init__(self):
-        """Initialize with empty functions list."""
+        """Initialize with empty functions and tools list for backward compatibility."""
         self.functions: List[FunctionDefinition] = []
+        self.tools: List[FunctionDefinition] = self.functions
 
     def __repr__(self) -> str:
-        """String representation showing registered function names."""
-        functions = [function["function"]["name"] for function in self.functions]
-        return f"{self.__class__.__name__}({functions})"
+        """String representation showing registered tool names (tools or functions)."""
+        # Prefer tools if set, else fallback to functions
+        tool_list = getattr(self, "tools", None)
+        if tool_list is None:
+            tool_list = getattr(self, "functions", [])
+        names = []
+        for tool in tool_list:
+            try:
+                names.append(tool["function"]["name"])
+            except Exception:
+                pass
+        return f"{self.__class__.__name__}({names})"
 
     def __str__(self) -> str:
-        """String representation showing registered function names."""
-        functions = [function["function"]["name"] for function in self.functions]
-        return f"{self.__class__.__name__}({functions})"
+        """String representation showing registered tool names (tools or functions)."""
+        tool_list = getattr(self, "tools", None)
+        if tool_list is None:
+            tool_list = getattr(self, "functions", [])
+        names = []
+        for tool in tool_list:
+            try:
+                names.append(tool["function"]["name"])
+            except Exception:
+                pass
+        return f"{self.__class__.__name__}({names})"
 
     def has_function(self, name: str) -> bool:
         """
