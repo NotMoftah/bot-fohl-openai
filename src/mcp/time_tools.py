@@ -1,5 +1,5 @@
 import datetime
-from typing import Optional
+from typing import Optional, Dict, Any
 from .registry import BaseTool
 
 
@@ -13,6 +13,23 @@ class GetTimeTool(BaseTool):
     @property
     def description(self) -> str:
         return "Get current time using a specified format."
+
+    @property
+    def schema(self) -> Dict[str, Any]:
+        """
+        Get the JSON schema for the tool, with format parameter explicitly required.
+        """
+        return {
+            "type": "object",
+            "properties": {
+                "format": {
+                    "type": "string",
+                    "description": "Python format string for the time",
+                }
+            },
+            "required": ["format"],
+            "additionalProperties": False,
+        }
 
     def execute(self, format: str = "%I:%M%p - %B %d, %Y") -> str:
         """
