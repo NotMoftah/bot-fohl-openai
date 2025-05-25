@@ -1,13 +1,13 @@
 import datetime
 import requests
 
-from core import ExternalToolsHandler, FunctionTool
+from core import ExternalFunctionsHandler, FunctionDefinition
 from typing import Dict, List, Any, Optional, Literal, TypedDict
 
 
-class TimeTools(ExternalToolsHandler):
+class TimeTools(ExternalFunctionsHandler):
     def __init__(self) -> None:
-        self.tools: List[FunctionTool] = [
+        self.functions: List[FunctionDefinition] = [
             {
                 "type": "function",
                 "function": {
@@ -42,9 +42,9 @@ class TimeTools(ExternalToolsHandler):
         return f"The current time is {current_time}."
 
 
-class WebTools(ExternalToolsHandler):
+class WebTools(ExternalFunctionsHandler):
     def __init__(self) -> None:
-        self.tools: List[FunctionTool] = [
+        self.functions: List[FunctionDefinition] = [
             {
                 "type": "function",
                 "function": {

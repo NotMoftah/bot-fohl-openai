@@ -1,31 +1,31 @@
 from typing import Dict, List, Any, Literal, TypedDict, Optional
 
 
-class FunctionTool(TypedDict):
-    """Type definition for OpenAI function tools."""
+class FunctionDefinition(TypedDict):
+    """Type definition for OpenAI function definitions."""
 
     type: Literal["function"]
     function: Dict[str, Any]
 
 
-class ExternalToolsHandler:
+class ExternalFunctionsHandler:
     """
-    Base class for external tool handlers that can be registered with the OpenAI chat bot.
+    Base class for external function handlers that can be registered with the OpenAI chat bot.
     Legacy class maintained for backward compatibility with the old system.
     """
 
     def __init__(self):
-        """Initialize with empty tools list."""
-        self.tools: List[FunctionTool] = []
+        """Initialize with empty functions list."""
+        self.functions: List[FunctionDefinition] = []
 
     def __repr__(self) -> str:
         """String representation showing registered function names."""
-        functions = [tool["function"]["name"] for tool in self.tools]
+        functions = [function["function"]["name"] for function in self.functions]
         return f"{self.__class__.__name__}({functions})"
 
     def __str__(self) -> str:
         """String representation showing registered function names."""
-        functions = [tool["function"]["name"] for tool in self.tools]
+        functions = [function["function"]["name"] for function in self.functions]
         return f"{self.__class__.__name__}({functions})"
 
     def has_function(self, name: str) -> bool:

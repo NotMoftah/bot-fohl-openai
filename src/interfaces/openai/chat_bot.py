@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 
 from openai import AsyncOpenAI
 from core.context import UserContextManager, UserContext
-from mcp import ToolRegistry
+from functions import FunctionRegistry
 
 
 @dataclass
@@ -52,7 +52,7 @@ class OpenAIChatBot:
         api_key: str,
         context_manager: Optional[UserContextManager] = None,
         config: Optional[OpenAIConfig] = None,
-        tool_registry: Optional[ToolRegistry] = None,
+        function_registry: Optional[FunctionRegistry] = None,
     ):
         """
         Initialize the OpenAI chat bot.
@@ -61,69 +61,70 @@ class OpenAIChatBot:
             api_key: OpenAI API key
             context_manager: Manager for user conversation contexts
             config: Configuration for OpenAI API calls
-            tool_registry: Registry for tools that can be used by the chat bot
+            function_registry: Registry for functions that can be used by the chat bot
         """
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(logging.INFO)
         self.client = AsyncOpenAI(api_key=api_key, timeout=10)
         self.context_manager = context_manager or UserContextManager()
         self.config = config or OpenAIConfig()
-        self.tool_registry = tool_registry or ToolRegistry()
+        self.function_registry = function_registry or FunctionRegistry()
         self.handlers = []
-        self.tools = (
-            list(OpenAIChatBot.DEFAULT_TOOLS) + self.tool_registry.get_openai_tools()
+        self.functions = (
+            list(OpenAIChatBot.DEFAULT_TOOLS)
+            + self.function_registry.get_openai_functions()
         )
         self.logger.info(
             "OpenAIChatBot initialized with model: %s, tools: %s",
             self.config.model,
-            [t["function"]["name"] for t in self.tools],
+            [f["function"]["name"] for f in self.functions],
         )
 
-    def register_external_tools(self, handler) -> None:
+    def register_external_functions(self, handler) -> None:
         """
-        Register external tools with the chat bot.
+        Register external functions with the chat bot.
 
-        This method supports both legacy ExternalToolsHandler and new Tool objects.
+        This method supports both legacy ExternalFunctionsHandler and new Function objects.
         For backward compatibility, it adds the handler to the handlers list.
 
         Args:
-            handler: The tool handler to register
+            handler: The function handler to register
         """
         # Check for legacy handler
-        if not hasattr(handler, "tools") or not hasattr(handler, "call_function"):
+        if not hasattr(handler, "functions") or not hasattr(handler, "call_function"):
             raise TypeError(
-                "Handler must have 'tools' attribute and 'call_function' method."
+                "Handler must have 'functions' attribute and 'call_function' method."
             )
 
-        # For legacy handlers, keep track of them separately and add to tool registry
+        # For legacy handlers, keep track of them separately and add to function registry
         if handler not in self.handlers:
             self.handlers.append(handler)
-            self.tools.extend(handler.tools)
+            self.functions.extend(handler.functions)
             self.logger.info(
-                "Registered legacy external tools handler: %s, tools: %s",
+                "Registered legacy external functions handler: %s, functions: %s",
                 handler,
-                [t["function"]["name"] for t in handler.tools],
+                [f["function"]["name"] for f in handler.functions],
             )
 
-    def register_tool(self, tool) -> None:
+    def register_function(self, function) -> None:
         """
-        Register a tool with the chat bot.
+        Register a function with the chat bot.
 
         Args:
-            tool: The tool to register
+            function: The function to register
         """
         try:
-            self.tool_registry.register_tool(tool)
-            self.tools = (
+            self.function_registry.register_function(function)
+            self.functions = (
                 list(OpenAIChatBot.DEFAULT_TOOLS)
-                + self.tool_registry.get_openai_tools()
+                + self.function_registry.get_openai_functions()
             )
             self.logger.info(
-                f"Registered tool: {tool.name}. Current tools: %s",
-                [t["function"]["name"] for t in self.tools],
+                f"Registered function: {function.name}. Current functions: %s",
+                [f["function"]["name"] for f in self.functions],
             )
         except Exception as e:
-            self.logger.error(f"Error registering tool: {e}", exc_info=True)
+            self.logger.error(f"Error registering function: {e}", exc_info=True)
             raise
 
     async def send_message(
@@ -188,7 +189,7 @@ class OpenAIChatBot:
             try:
                 response = await self.client.chat.completions.create(
                     model=model,
-                    tools=self.tools,
+                    tools=self.functions,
                     messages=history_with_system,
                     n=1,
                     temperature=self.config.temperature,
@@ -225,7 +226,7 @@ class OpenAIChatBot:
                     name = tool_call.function.name
                     args = json.loads(tool_call.function.arguments)
                     self.logger.info(
-                        "[User %s] Tool call requested: %s with args %s",
+                        "[User %s] Function call requested: %s with args %s",
                         user_id,
                         name,
                         args,
@@ -241,7 +242,10 @@ class OpenAIChatBot:
                     else:
                         result = self._call_function(name, args)
                     self.logger.info(
-                        "[User %s] Tool call result for %s: %s", user_id, name, result
+                        "[User %s] Function call result for %s: %s",
+                        user_id,
+                        name,
+                        result,
                     )
                     user_context.add_message(
                         {
@@ -268,17 +272,17 @@ class OpenAIChatBot:
         if function_name == "clear_history":
             return self._clear_history(args.get("user_id", "unknown"))
         try:
-            if self.tool_registry.get_tool(function_name):
-                result = self.tool_registry.call_tool(function_name, **args)
+            if self.function_registry.get_function(function_name):
+                result = self.function_registry.call_function(function_name, **args)
                 self.logger.info(
-                    "Function %s executed via ToolRegistry. Result: %s",
+                    "Function %s executed via FunctionRegistry. Result: %s",
                     function_name,
                     result,
                 )
                 return str(result) if result is not None else ""
         except Exception as e:
             self.logger.error(
-                "Error calling tool %s: %s", function_name, e, exc_info=True
+                "Error calling function %s: %s", function_name, e, exc_info=True
             )
         for handler in self.handlers:
             if hasattr(handler, "has_function") and handler.has_function(function_name):

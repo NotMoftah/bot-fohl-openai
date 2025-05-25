@@ -1,3 +1,3 @@
-from .tool_handler import ExternalToolsHandler, FunctionTool
+from .tool_handler import ExternalFunctionsHandler, FunctionDefinition
 
-__all__ = ["ExternalToolsHandler", "FunctionTool"]
+__all__ = ["ExternalFunctionsHandler", "FunctionDefinition"]

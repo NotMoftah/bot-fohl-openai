@@ -1,9 +1,9 @@
 import requests
 from typing import Dict, Any, Optional
-from .registry import BaseTool
+from .registry import BaseFunction
 
 
-class HttpRequestTool(BaseTool):
+class HttpRequestFunction(BaseFunction):
     """Tool to make HTTP requests."""
 
     @property

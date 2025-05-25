@@ -3,7 +3,7 @@ import logging
 
 from typing import List
 from openai import AsyncOpenAI
-from core import ExternalToolsHandler
+from core import ExternalFunctionsHandler
 
 
 class OpenAIChatBot:
@@ -33,22 +33,22 @@ class OpenAIChatBot:
     def __init__(self, api_key: str):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.client = AsyncOpenAI(api_key=api_key, timeout=10)
-        self.handlers: List[ExternalToolsHandler] = []
+        self.handlers: List[ExternalFunctionsHandler] = []
         self.tools = list(OpenAIChatBot.TOOLS)
         self.history = [
             {"role": "system", "content": self.INSTRUCTIONS},
         ]
         self.logger.info("BotGPT initialized.")
 
-    def register_external_tools(self, handler: ExternalToolsHandler) -> None:
-        # check if the handler is a subclass of ExternalToolsHandler
-        if not issubclass(handler.__class__, ExternalToolsHandler):
-            raise TypeError("handler must be a subclass of ExternalToolsHandler.")
+    def register_external_tools(self, handler: ExternalFunctionsHandler) -> None:
+        # check if the handler is a subclass of ExternalFunctionsHandler
+        if not issubclass(handler.__class__, ExternalFunctionsHandler):
+            raise TypeError("handler must be a subclass of ExternalFunctionsHandler.")
         # check if the handler is already registered
         # if not, register the handler and add its tools to the list
         if not handler in self.handlers:
             self.handlers.append(handler)
-            self.tools.extend(handler.tools)
+            self.tools.extend(handler.functions)
             self.logger.info("registered external tools handler: %s", handler)
 
     async def send_message(self, message: str, model: str = "gpt-4o-mini") -> str:

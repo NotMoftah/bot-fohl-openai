@@ -1,9 +1,9 @@
 import datetime
 from typing import Optional, Dict, Any
-from .registry import BaseTool
+from .registry import BaseFunction
 
 
-class GetTimeTool(BaseTool):
+class GetTimeFunction(BaseFunction):
     """Tool to get the current time."""
 
     @property

@@ -7,7 +7,7 @@ from typing import Dict, Any
 from core.context import UserContextManager
 from interfaces.openai import OpenAIChatBot, OpenAIConfig
 from interfaces.telegram import TelegramInterface, TelegramMessage, LambdaRequestParser
-from mcp import ToolRegistry, GetTimeTool, HttpRequestTool
+from functions import FunctionRegistry, GetTimeFunction, HttpRequestFunction
 
 
 # Set up logging
@@ -20,9 +20,9 @@ user_context_manager = UserContextManager()
 
 
 # Initialize the mcp registry
-mcp_registry = ToolRegistry()
-mcp_registry.register_tool(GetTimeTool())
-mcp_registry.register_tool(HttpRequestTool())
+mcp_registry = FunctionRegistry()
+mcp_registry.register_function(GetTimeFunction())
+mcp_registry.register_function(HttpRequestFunction())
 
 
 # Initialize the OpenAI interface

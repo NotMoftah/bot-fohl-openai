@@ -1,21 +1,21 @@
 from typing import Dict, List, Any, Literal, TypedDict
 
 
-class FunctionTool(TypedDict):
+class FunctionDefinition(TypedDict):
     type: Literal["function"]
     function: Dict[str, Any]
 
 
-class ExternalToolsHandler:
+class ExternalFunctionsHandler:
     def __init__(self):
-        self.tools: List[FunctionTool] = []
+        self.functions: List[FunctionDefinition] = []
 
     def __repr__(self):
-        functions = [tool["function"]["name"] for tool in self.tools]
+        functions = [function["function"]["name"] for function in self.functions]
         return f"{self.__class__.__name__}({functions})"
 
     def __str__(self):
-        functions = [tool["function"]["name"] for tool in self.tools]
+        functions = [function["function"]["name"] for function in self.functions]
         return f"{self.__class__.__name__}({functions})"
 
     def has_function(self, name: str) -> bool:
