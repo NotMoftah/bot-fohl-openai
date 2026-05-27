@@ -5,12 +5,10 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "bot-fohl-openai"
 version = "0.1.0"
-description = "OpenAI-based Telegram bot"
+description = "Telegram bot"
 requires-python = ">=3.13"
 dependencies = [
-    "openai>=1.0",
     "python-telegram-bot>=21.0",
-    "requests>=2.32",
 ]
 
 [project.optional-dependencies]
