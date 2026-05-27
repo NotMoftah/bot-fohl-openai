@@ -10,7 +10,7 @@ ENV_REPO_NAME = os.environ["REPO_NAME"]
 ENV_PR_NUMBER = os.environ["PR_NUMBER"]
 ENV_PR_DESCRIPTION = os.getenv("PR_DESCRIPTION", "")
 COMMENT_THANK_YOU = (
-    "Thank you for your pull request! We will review it as soon as possible."
+    "thank you for your pull request! we will review it as soon as possible."
 )
 
 
