@@ -3,7 +3,8 @@ import logging
 from telegram import Bot
 
 from entity.dto import TelegramMessageDTO
-from interface import EventType, EventHandler, EventBus
+from interface.event_handler import EventHandler
+from interface.event_type import EventType
 
 
 class SendTelegramMessagesHandler(EventHandler):

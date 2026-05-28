@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from event_bus import EventBus
+from .event_bus import EventBus
 
 
 class EventHandler(ABC):
