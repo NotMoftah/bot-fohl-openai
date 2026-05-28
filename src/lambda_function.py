@@ -4,12 +4,10 @@ import asyncio
 import logging
 
 from entity.dto import TelegramMessageDTO
-from handler import (
-    IncomingTelegramMessagesHandler,
-    SendTelegramMessagesHandler,
-)
-from interface import EventType
-from utils import event_bus
+from handler.incoming_telegram_messages_handler import IncomingTelegramMessagesHandler
+from handler.send_telegram_messages_handler import SendTelegramMessagesHandler
+from interface.event_type import EventType
+from utils.event_bus import async_event_bus
 
 # set up logging
 logging.getLogger().setLevel(logging.INFO)
@@ -19,12 +17,12 @@ logger = logging.getLogger("lambda_function")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 # initialize the handlers
-IncomingTelegramMessagesHandler().init(event_bus)
-SendTelegramMessagesHandler(BOT_TOKEN).init(event_bus)
+IncomingTelegramMessagesHandler().init(async_event_bus)
+SendTelegramMessagesHandler(BOT_TOKEN).init(async_event_bus)
 
 # handle async bus publishing
 async def publish_async(event_type, event):
-    await event_bus.publish(event_type, event)
+    await async_event_bus.publish(event_type, event)
 
 def lambda_handler(event, context):
     try:
@@ -36,9 +34,9 @@ def lambda_handler(event, context):
         if "update_id" in body:
             telegram_message = TelegramMessageDTO(
                 message_id=body["message"]["message_id"],
-                chat_id=body["chat"]["id"],
-                text=body["text"],
-                username=body["chat"]["username"]
+                text=body["message"]["text"],
+                chat_id=body["message"]["chat"]["id"],
+                username=body["message"]["chat"]["username"],
             )
             asyncio.run(publish_async(EventType.incoming_telegram_message, telegram_message))
 

@@ -3,13 +3,13 @@ import logging
 
 from typing import Any, Dict, Set
 
-from interface.event_bus import AsyncHandler
+from interface.event_bus import AsyncHandler, EventBus
 
 
-class AsyncEventBus:
-    _instance: "AsyncEventBus | None" = None
+class AsyncEventBus(EventBus):
+    _instance: EventBus | None = None
 
-    def __new__(cls) -> "AsyncEventBus":
+    def __new__(cls) -> EventBus:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
@@ -59,7 +59,6 @@ class AsyncEventBus:
             )
 
 
-# Module-level singleton — import this directly for convenience:
-#   from utils.can import event_bus
-event_bus = AsyncEventBus()
+# singleton
+async_event_bus: EventBus = AsyncEventBus()
 
