@@ -11,7 +11,6 @@ class SendTelegramMessagesHandler(EventHandler):
     def __init__(self, token):
         self._bus = None
         self._token = token
-        self._bot = Bot(token=self._token)
         self._logger = logging.getLogger(self.__class__.__name__)
 
     def init(self, bus):
@@ -23,7 +22,5 @@ class SendTelegramMessagesHandler(EventHandler):
     async def handle_sending_telegram_message(self, message: TelegramMessageDTO):
         self._logger.info(f"sending telegram message: {message}")
 
-        # if the bot is already initialized, this method returns immediately.
-        await self._bot.initialize()
-
-        await self._bot.send_message(chat_id=message.chat_id, text=message.text)
+        async with Bot(token=self._token) as bot:
+            await bot.send_message(chat_id=message.chat_id, text=message.text)
