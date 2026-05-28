@@ -33,10 +33,18 @@ jobs:
             fi
           fi
 
-      - name: Zip source code
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies into source directory
+        run: pip install --target src/ --upgrade $(python -c "import tomllib; d=tomllib.load(open('pyproject.toml','rb')); print(' '.join(d['project']['dependencies']))")
+
+      - name: Zip source code with dependencies
         run: |
           cd src
-          zip -r ../lambda_function.zip .
+          zip -r ../lambda_function.zip . -x "*.pyc" -x "*/__pycache__/*" -x "*.dist-info/*" -x "*.egg-info/*"
 
       - name: AWS Lambda Deploy
         uses: appleboy/lambda-action@v0.2.0

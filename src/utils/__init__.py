@@ -1,1 +1,1 @@
-from .logging import LambdaLogger
+from event_bus import event_bus
