@@ -20,6 +20,10 @@ class SendTelegramMessagesHandler(EventHandler):
         return True
 
     async def handle_sending_telegram_message(self, message: TelegramMessageDTO):
+        if message.chat_type != "private":
+            self._logger.warning("Not a private message")
+            return
+
         self._logger.info(f"sending telegram message: {message}")
 
         async with Bot(token=self._token) as bot:
