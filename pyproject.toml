@@ -9,6 +9,7 @@ description = "Telegram bot"
 requires-python = ">=3.13"
 dependencies = [
     "python-telegram-bot>=21.0",
+    "pynamodb>=6.1.0",
 ]
 
 [project.optional-dependencies]
