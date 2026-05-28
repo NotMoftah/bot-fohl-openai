@@ -26,4 +26,4 @@ class IncomingTelegramMessagesHandler(EventHandler):
             text=f"got: {message.text}",
             username=None
         )
-        self._event_bus.publish(EventType.send_telegram_message, replay)
+        await self._event_bus.publish(EventType.send_telegram_message, replay)
