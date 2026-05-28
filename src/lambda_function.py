@@ -31,12 +31,19 @@ def lambda_handler(event, context):
         logger.info(f"Incoming request body: {body}")
 
         # telegram data contains update_id in body
-        if "update_id" in body:
+        if "update_id" in body and "message" in body:
+            message = body["message"]
+            message_id = message["message_id"]
+            message_text = message["text"]
+            username = message["from"]["username"]
+            chat_id = message["chat"]["id"]
+            chat_type = message["chat"]["type"]
             telegram_message = TelegramMessageDTO(
-                message_id=body["message"]["message_id"],
-                text=body["message"]["text"],
-                chat_id=body["message"]["chat"]["id"],
-                username=body["message"]["chat"]["username"],
+                message_id=message_id,
+                text=message_text,
+                chat_id=chat_id,
+                chat_type=chat_type,
+                username=username
             )
             asyncio.run(publish_async(EventType.incoming_telegram_message, telegram_message))
 
