@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Callable, Any, Awaitable
 
-from event_type import EventType
-
+from .event_type import EventType
 
 AsyncHandler = Callable[[Any], Awaitable[None]]
 
