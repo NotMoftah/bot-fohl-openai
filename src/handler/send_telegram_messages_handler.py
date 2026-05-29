@@ -1,6 +1,6 @@
 import logging
-from typing import Optional
 
+from typing import Optional
 from telegram import Bot
 
 from entity.dto import ChatType, TelegramMessageDTO

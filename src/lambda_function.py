@@ -13,6 +13,7 @@ from handler.send_telegram_messages_handler import SendTelegramMessagesHandler
 from interface.event_type import EventType
 from utils.event_bus import async_event_bus
 
+
 logging.getLogger().setLevel(logging.INFO)
 logger = logging.getLogger("lambda_function")
 
