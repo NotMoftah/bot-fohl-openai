@@ -22,8 +22,8 @@ class TelegramMessageDTO:
     chat_id: int
     username: str
     text: str
-    chat_type: str  # plain str — telegram may send values outside ChatType
+    chat_type: str  # plain str as telegram may send values outside ChatType
 
     def serialize(self) -> dict[str, object]:
-        """return a json-serialisable dict of all dto fields."""
+        """return a json-serializable dict of all dto fields."""
         return dataclasses.asdict(self)

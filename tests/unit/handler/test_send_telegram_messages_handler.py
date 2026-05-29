@@ -9,6 +9,7 @@ from interface.event_type import EventType
 
 @pytest.fixture()
 def mock_bus() -> MagicMock:
+    """provide a mock EventBus with an async publish method."""
     bus = MagicMock()
     bus.publish = AsyncMock()
     return bus
@@ -33,25 +34,25 @@ def _make_message(chat_type: str = ChatType.PRIVATE) -> TelegramMessageDTO:
 
 class TestSendTelegramMessagesHandlerInit:
     def test_init_returns_true_on_success(self, mock_bus: MagicMock) -> None:
-        # Arrange
+        # arrange
         h = SendTelegramMessagesHandler(token="tok")
 
-        # Act
+        # act
         result = h.init(mock_bus)
 
-        # Assert
+        # assert
         assert result is True
 
     def test_init_subscribes_to_send_telegram_message_event(
         self, mock_bus: MagicMock
     ) -> None:
-        # Arrange
+        # arrange
         h = SendTelegramMessagesHandler(token="tok")
 
-        # Act
+        # act
         h.init(mock_bus)
 
-        # Assert
+        # assert
         mock_bus.subscribe.assert_called_once_with(
             EventType.SEND_TELEGRAM_MESSAGE,
             h.handle_sending_telegram_message,
@@ -65,7 +66,7 @@ class TestSendTelegramMessagesHandlerHandle:
         # arrange
         message = _make_message(chat_type=ChatType.GROUP)
 
-        # act — must return without calling the Bot API
+        # act - must return without calling the Bot API
         with patch("handler.send_telegram_messages_handler.Bot") as mock_bot_cls:
             await handler.handle_sending_telegram_message(message)
 
@@ -98,11 +99,11 @@ class TestSendTelegramMessagesHandlerHandle:
         mock_bot.__aenter__ = AsyncMock(return_value=mock_bot)
         mock_bot.__aexit__ = AsyncMock(return_value=False)
 
-        # Act
+        # act
         with patch("handler.send_telegram_messages_handler.Bot", return_value=mock_bot):
             await handler.handle_sending_telegram_message(message)
 
-        # Assert
+        # assert
         mock_bot.send_message.assert_awaited_once_with(
             chat_id=777, text="hello"
         )
@@ -110,12 +111,11 @@ class TestSendTelegramMessagesHandlerHandle:
     async def test_handle_sending_telegram_message_raises_when_token_is_missing(
         self, mock_bus: MagicMock
     ) -> None:
-        # Arrange — handler initialised with no token
+        # arrange - handler initialized with no token
         h = SendTelegramMessagesHandler(token=None)
         h.init(mock_bus)
         message = _make_message(chat_type="private")
 
-        # Act / Assert
+        # act / assert
         with pytest.raises(RuntimeError, match="BOT_TOKEN is not configured"):
             await h.handle_sending_telegram_message(message)
-

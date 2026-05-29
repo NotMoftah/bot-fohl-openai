@@ -10,7 +10,7 @@ from interface.event_type import EventType
 
 
 class SendTelegramMessagesHandler(EventHandler):
-    """Subscribes to send-message events and forwards them to the Telegram Bot API."""
+    """subscribes to send-message events and forwards them to the telegram Bot API."""
 
     def __init__(self, token: Optional[str]) -> None:
         self._bus: EventBus | None = None
@@ -18,25 +18,24 @@ class SendTelegramMessagesHandler(EventHandler):
         self._logger = logging.getLogger(self.__class__.__name__)
 
     def init(self, bus: EventBus) -> bool:
-        """Subscribe to :attr:`EventType.send_telegram_message` on *bus*."""
+        """subscribe to EventType.SEND_TELEGRAM_MESSAGE on bus."""
         self._bus = bus
         bus.subscribe(EventType.SEND_TELEGRAM_MESSAGE, self.handle_sending_telegram_message)
         return True
 
     async def handle_sending_telegram_message(self, message: TelegramMessageDTO) -> None:
-        """Send *message* to the Telegram chat, skipping any non-private conversation."""
+        """send *message* to the telegram chat, skipping any non-private conversation."""
         if message.chat_type != ChatType.PRIVATE:
             # only respond in direct chats to avoid spamming groups
             self._logger.warning(
-                "skipping send for chat_type=%r — only private chats are supported",
-                message.chat_type,
+                f"skipping send for chat_type={message.chat_type!r} - only private chats are supported",
             )
             return
 
         if not self._token:
             raise RuntimeError("BOT_TOKEN is not configured; cannot send message")
 
-        self._logger.info("sending telegram message: %s", message)
+        self._logger.info(f"sending telegram message: {message}")
 
         async with Bot(token=self._token) as bot:
             await bot.send_message(chat_id=message.chat_id, text=message.text)

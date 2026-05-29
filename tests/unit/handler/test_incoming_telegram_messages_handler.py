@@ -10,7 +10,7 @@ from interface.event_type import EventType
 
 @pytest.fixture()
 def mock_bus() -> MagicMock:
-    """Provide a mock EventBus with an async publish method."""
+    """provide a mock EventBus with an async publish method."""
     bus = MagicMock()
     bus.publish = AsyncMock()
     return bus
@@ -36,25 +36,25 @@ def incoming_message() -> TelegramMessageDTO:
 
 class TestIncomingTelegramMessagesHandlerInit:
     def test_init_returns_true_on_success(self, mock_bus: MagicMock) -> None:
-        # Arrange
+        # arrange
         h = IncomingTelegramMessagesHandler()
 
-        # Act
+        # act
         result = h.init(mock_bus)
 
-        # Assert
+        # assert
         assert result is True
 
     def test_init_subscribes_to_incoming_telegram_message_event(
         self, mock_bus: MagicMock
     ) -> None:
-        # Arrange
+        # arrange
         h = IncomingTelegramMessagesHandler()
 
-        # Act
+        # act
         h.init(mock_bus)
 
-        # Assert
+        # assert
         mock_bus.subscribe.assert_called_once_with(
             EventType.INCOMING_TELEGRAM_MESSAGE,
             h.handle_incoming_telegram_message,
@@ -66,10 +66,10 @@ class TestIncomingTelegramMessagesHandlerHandle:
         self, handler: IncomingTelegramMessagesHandler, mock_bus: MagicMock,
         incoming_message: TelegramMessageDTO,
     ) -> None:
-        # Arrange / Act
+        # arrange / act
         await handler.handle_incoming_telegram_message(incoming_message)
 
-        # Assert
+        # assert
         mock_bus.publish.assert_awaited_once()
         event_type, reply = mock_bus.publish.call_args.args
         assert event_type == EventType.SEND_TELEGRAM_MESSAGE
@@ -78,10 +78,10 @@ class TestIncomingTelegramMessagesHandlerHandle:
         self, handler: IncomingTelegramMessagesHandler, mock_bus: MagicMock,
         incoming_message: TelegramMessageDTO,
     ) -> None:
-        # Arrange / Act
+        # arrange / act
         await handler.handle_incoming_telegram_message(incoming_message)
 
-        # Assert
+        # assert
         _, reply = mock_bus.publish.call_args.args
         assert "hi there" in reply.text
 
@@ -89,10 +89,10 @@ class TestIncomingTelegramMessagesHandlerHandle:
         self, handler: IncomingTelegramMessagesHandler, mock_bus: MagicMock,
         incoming_message: TelegramMessageDTO,
     ) -> None:
-        # Arrange / Act
+        # arrange / act
         await handler.handle_incoming_telegram_message(incoming_message)
 
-        # Assert
+        # assert
         _, reply = mock_bus.publish.call_args.args
         assert reply.chat_id == incoming_message.chat_id
 
@@ -100,10 +100,10 @@ class TestIncomingTelegramMessagesHandlerHandle:
         self, handler: IncomingTelegramMessagesHandler, mock_bus: MagicMock,
         incoming_message: TelegramMessageDTO,
     ) -> None:
-        # Arrange / Act
+        # arrange / act
         await handler.handle_incoming_telegram_message(incoming_message)
 
-        # Assert — outgoing replies have no message_id yet
+        # assert - outgoing replies have no message_id yet
         _, reply = mock_bus.publish.call_args.args
         assert reply.message_id is None
 
@@ -111,10 +111,9 @@ class TestIncomingTelegramMessagesHandlerHandle:
         self, handler: IncomingTelegramMessagesHandler, mock_bus: MagicMock,
         incoming_message: TelegramMessageDTO,
     ) -> None:
-        # Arrange / Act
+        # arrange / act
         await handler.handle_incoming_telegram_message(incoming_message)
 
-        # Assert
+        # assert
         _, reply = mock_bus.publish.call_args.args
         assert reply.chat_type == incoming_message.chat_type
-

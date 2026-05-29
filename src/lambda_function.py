@@ -19,7 +19,7 @@ logger = logging.getLogger("lambda_function")
 
 BOT_TOKEN: str | None = os.getenv("BOT_TOKEN")
 
-# handlers are singletons — registering once at cold-start avoids re-subscription
+# handlers are singletons registering once at cold-start avoids re-subscription
 IncomingTelegramMessagesHandler().init(async_event_bus)
 SendTelegramMessagesHandler(BOT_TOKEN).init(async_event_bus)
 
@@ -32,11 +32,11 @@ async def publish_async(event_type: EventType, data: Any) -> None:
 def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     """parse the api gateway payload and fan-out to registered event handlers.
 
-    returns a minimal api gateway proxy response — telegram only requires 200 ok.
+    returns a minimal api gateway proxy response as telegram only requires 200 ok.
     """
     try:
         body: dict[str, Any] = json.loads(event.get("body", "{}"))
-        logger.info("incoming request received (keys=%s)", list(body.keys()))
+        logger.info(f"incoming request received (keys={list(body.keys())})")
 
         if "update_id" in body and "message" in body:
             update = TelegramUpdateModel.model_validate(body)
@@ -52,13 +52,13 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         return {"statusCode": 200, "body": "ok"}
 
     except json.JSONDecodeError as exc:
-        logger.error("json decoding error: %s", exc, exc_info=True)
+        logger.error(f"json decoding error: {exc}", exc_info=True)
         return {"statusCode": 400, "body": "Invalid JSON format"}
 
     except ValidationError as exc:
-        logger.error("telegram payload validation failed: %s", exc, exc_info=True)
+        logger.error(f"telegram payload validation failed: {exc}", exc_info=True)
         return {"statusCode": 400, "body": "Invalid payload structure"}
 
-    except Exception as exc:  # noqa: BLE001 — last-resort lambda safety net
-        logger.error("unhandled error in lambda_handler: %s", exc, exc_info=True)
+    except Exception as exc:  # noqa: BLE001 last-resort lambda safety net
+        logger.error(f"unhandled error in lambda_handler: {exc}", exc_info=True)
         return {"statusCode": 500, "body": "Internal server error"}

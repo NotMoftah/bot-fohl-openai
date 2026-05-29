@@ -7,14 +7,14 @@ from interface.event_type import EventType
 
 
 class IncomingTelegramMessagesHandler(EventHandler):
-    """Subscribes to incoming messages and re-publishes an echo reply."""
+    """subscribes to incoming messages and re-publishes an echo reply."""
 
     def __init__(self) -> None:
         self._event_bus: EventBus | None = None
         self._logger = logging.getLogger(self.__class__.__name__)
 
     def init(self, event_bus: EventBus) -> bool:
-        """Subscribe to :attr:`EventType.incoming_telegram_message` on *event_bus*."""
+        """subscribe to EventType.INCOMING_TELEGRAM_MESSAGE on event_bus."""
         self._event_bus = event_bus
         event_bus.subscribe(
             EventType.INCOMING_TELEGRAM_MESSAGE,
@@ -23,8 +23,8 @@ class IncomingTelegramMessagesHandler(EventHandler):
         return True
 
     async def handle_incoming_telegram_message(self, message: TelegramMessageDTO) -> None:
-        """Echo the original message text back to the sender via the bus."""
-        self._logger.info("received incoming telegram message: %s", message)
+        """echo the original message text back to the sender via the bus."""
+        self._logger.info(f"received incoming telegram message: {message}")
 
         # dispatch reply back through the bus so the send handler can deliver it
         reply = TelegramMessageDTO(

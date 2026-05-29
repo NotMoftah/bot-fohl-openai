@@ -18,7 +18,7 @@ class TestTelegramMessageDTOInit:
     def test_telegram_message_dto_init_sets_message_id_correctly(
         self, sample_dto: TelegramMessageDTO
     ) -> None:
-        # arrange / act — fixture handles construction
+        # arrange / act - fixture handles construction
 
         # assert
         assert sample_dto.message_id == 42
@@ -65,22 +65,54 @@ class TestTelegramMessageDTOInit:
             chat_type="private",
         )
 
-        # assert — Optional[int] must accept None (used for outgoing replies)
+        # assert - Optional[int] must accept None (used for outgoing replies)
         assert dto.message_id is None
 
 
-class TestTelegramMessageDTORepr:
-    def test_telegram_message_dto_repr_contains_all_field_values(
+class TestTelegramMessageDTOStr:
+    def test_telegram_message_dto_str_contains_message_id(
         self, sample_dto: TelegramMessageDTO
     ) -> None:
         # arrange / act
-        result = repr(sample_dto)
+        result = str(sample_dto)
 
         # assert
         assert "42" in result
+
+    def test_telegram_message_dto_str_contains_chat_id(
+        self, sample_dto: TelegramMessageDTO
+    ) -> None:
+        # arrange / act
+        result = str(sample_dto)
+
+        # assert
         assert "100" in result
+
+    def test_telegram_message_dto_str_contains_username(
+        self, sample_dto: TelegramMessageDTO
+    ) -> None:
+        # arrange / act
+        result = str(sample_dto)
+
+        # assert
         assert "johndoe" in result
+
+    def test_telegram_message_dto_str_contains_text(
+        self, sample_dto: TelegramMessageDTO
+    ) -> None:
+        # arrange / act
+        result = str(sample_dto)
+
+        # assert
         assert "hello" in result
+
+    def test_telegram_message_dto_str_contains_chat_type(
+        self, sample_dto: TelegramMessageDTO
+    ) -> None:
+        # arrange / act
+        result = str(sample_dto)
+
+        # assert
         assert "private" in result
 
     def test_telegram_message_dto_repr_matches_str(
@@ -88,7 +120,7 @@ class TestTelegramMessageDTORepr:
     ) -> None:
         # arrange / act
 
-        # assert — dataclass __str__ delegates to __repr__
+        # assert - dataclass __str__ delegates to __repr__
         assert repr(sample_dto) == str(sample_dto)
 
 
@@ -159,171 +191,3 @@ class TestChatType:
 
         # arrange / act / assert
         assert ChatType.PRIVATE == "private"
-
-
-
-@pytest.fixture()
-def sample_dto() -> TelegramMessageDTO:
-    return TelegramMessageDTO(
-        message_id=42,
-        chat_id=100,
-        username="johndoe",
-        text="hello",
-        chat_type="private",
-    )
-
-
-class TestTelegramMessageDTOInit:
-    def test_telegram_message_dto_init_sets_message_id_correctly(
-        self, sample_dto: TelegramMessageDTO
-    ) -> None:
-        # Arrange / Act — fixture handles construction
-
-        # Assert
-        assert sample_dto.message_id == 42
-
-    def test_telegram_message_dto_init_sets_chat_id_correctly(
-        self, sample_dto: TelegramMessageDTO
-    ) -> None:
-        # Arrange / Act
-
-        # Assert
-        assert sample_dto.chat_id == 100
-
-    def test_telegram_message_dto_init_sets_username_correctly(
-        self, sample_dto: TelegramMessageDTO
-    ) -> None:
-        # Arrange / Act
-
-        # Assert
-        assert sample_dto.username == "johndoe"
-
-    def test_telegram_message_dto_init_sets_text_correctly(
-        self, sample_dto: TelegramMessageDTO
-    ) -> None:
-        # Arrange / Act
-
-        # Assert
-        assert sample_dto.text == "hello"
-
-    def test_telegram_message_dto_init_sets_chat_type_correctly(
-        self, sample_dto: TelegramMessageDTO
-    ) -> None:
-        # Arrange / Act
-
-        # Assert
-        assert sample_dto.chat_type == "private"
-
-    def test_telegram_message_dto_init_with_none_message_id_is_valid(self) -> None:
-        # Arrange / Act
-        dto = TelegramMessageDTO(
-            message_id=None,
-            chat_id=1,
-            username="user",
-            text="reply",
-            chat_type="private",
-        )
-
-        # Assert — Optional[int] must accept None (used for outgoing replies)
-        assert dto.message_id is None
-
-
-class TestTelegramMessageDTOStr:
-    def test_telegram_message_dto_str_contains_message_id(
-        self, sample_dto: TelegramMessageDTO
-    ) -> None:
-        # Arrange / Act
-        result = str(sample_dto)
-
-        # Assert
-        assert "42" in result
-
-    def test_telegram_message_dto_str_contains_chat_id(
-        self, sample_dto: TelegramMessageDTO
-    ) -> None:
-        # Arrange / Act
-        result = str(sample_dto)
-
-        # Assert
-        assert "100" in result
-
-    def test_telegram_message_dto_str_contains_username(
-        self, sample_dto: TelegramMessageDTO
-    ) -> None:
-        # Arrange / Act
-        result = str(sample_dto)
-
-        # Assert
-        assert "johndoe" in result
-
-    def test_telegram_message_dto_str_contains_text(
-        self, sample_dto: TelegramMessageDTO
-    ) -> None:
-        # Arrange / Act
-        result = str(sample_dto)
-
-        # Assert
-        assert "hello" in result
-
-    def test_telegram_message_dto_str_contains_chat_type(
-        self, sample_dto: TelegramMessageDTO
-    ) -> None:
-        # Arrange / Act
-        result = str(sample_dto)
-
-        # Assert
-        assert "private" in result
-
-    def test_telegram_message_dto_repr_matches_str(
-        self, sample_dto: TelegramMessageDTO
-    ) -> None:
-        # Arrange / Act
-
-        # Assert
-        assert repr(sample_dto) == str(sample_dto)
-
-
-class TestTelegramMessageDTOSerialize:
-    def test_telegram_message_dto_serialize_returns_dict(
-        self, sample_dto: TelegramMessageDTO
-    ) -> None:
-        # Arrange / Act
-        result = sample_dto.serialize()
-
-        # Assert
-        assert isinstance(result, dict)
-
-    def test_telegram_message_dto_serialize_contains_all_keys(
-        self, sample_dto: TelegramMessageDTO
-    ) -> None:
-        # Arrange / Act
-        result = sample_dto.serialize()
-
-        # Assert
-        assert set(result.keys()) == {"message_id", "chat_id", "chat_type", "username", "text"}
-
-    def test_telegram_message_dto_serialize_values_match_fields(
-        self, sample_dto: TelegramMessageDTO
-    ) -> None:
-        # Arrange / Act
-        result = sample_dto.serialize()
-
-        # Assert
-        assert result["message_id"] == 42
-        assert result["chat_id"] == 100
-        assert result["username"] == "johndoe"
-        assert result["text"] == "hello"
-        assert result["chat_type"] == "private"
-
-    def test_telegram_message_dto_serialize_with_none_message_id_returns_none(self) -> None:
-        # Arrange
-        dto = TelegramMessageDTO(
-            message_id=None, chat_id=1, username="u", text="t", chat_type="private"
-        )
-
-        # Act
-        result = dto.serialize()
-
-        # Assert
-        assert result["message_id"] is None
-
