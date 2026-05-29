@@ -1,0 +1,51 @@
+name: Coverage Gate
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - "main"
+      - "rel/*"
+  push:
+    branches:
+      - "main"
+      - "rel/*"
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  coverage:
+    name: Minimum 80% Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Run tests with coverage
+        # fail_under = 80 is enforced via [tool.coverage.report] in pyproject.toml;
+        # --cov-fail-under is set here explicitly so the intent is visible in the log.
+        run: pytest --cov --cov-report=term-missing --cov-fail-under=80
+
+      - name: Post coverage summary to PR
+        if: github.event_name == 'pull_request'
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-coverage-path: ./coverage.txt
+          title: Coverage Report
+        continue-on-error: true
+

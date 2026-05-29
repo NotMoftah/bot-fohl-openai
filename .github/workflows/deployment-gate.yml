@@ -1,4 +1,4 @@
-name: Continuous Deployment
+name: Deployment Gate
 
 on:
   workflow_dispatch:
