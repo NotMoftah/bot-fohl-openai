@@ -1,25 +1,28 @@
+from __future__ import annotations
 
+import dataclasses
+from dataclasses import dataclass
+from enum import StrEnum
+from typing import Optional
+
+
+class ChatType(StrEnum):
+    PRIVATE = "private"
+    GROUP = "group"
+    SUPERGROUP = "supergroup"
+    CHANNEL = "channel"
+
+
+@dataclass
 class TelegramMessageDTO:
-    def __init__(self, message_id, chat_id, username, text, chat_type):
-        self.message_id : int = message_id
-        self.chat_id : int = chat_id
-        self.username : int = username
-        self.text : str = text
-        self.chat_type: str = chat_type
+    """immutable carrier for a single telegram message payload."""
 
-    def __str__(self):
-        return (f"TelegramMessage("
-                f"message_id={self.message_id}, "
-                f"chat_id={self.chat_id}, "
-                f"chat_type={self.chat_type}, "
-                f"username={self.username}, "
-                f"text={self.text})")
+    message_id: Optional[int]
+    chat_id: int
+    username: str
+    text: str
+    chat_type: str  # plain str — telegram may send values outside ChatType
 
-    def serialize(self) -> dict:
-        return {
-            "message_id": self.message_id,
-            "chat_id": self.chat_id,
-            "chat_type": self.chat_type,
-            "username": self.username,
-            "text": self.text
-        }
+    def serialize(self) -> dict[str, object]:
+        """return a json-serialisable dict of all dto fields."""
+        return dataclasses.asdict(self)
