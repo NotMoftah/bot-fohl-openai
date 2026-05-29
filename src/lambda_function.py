@@ -2,56 +2,63 @@ import os
 import json
 import asyncio
 import logging
+from typing import Any
+
+from pydantic import ValidationError
 
 from entity.dto import TelegramMessageDTO
+from entity.models import TelegramUpdateModel
 from handler.incoming_telegram_messages_handler import IncomingTelegramMessagesHandler
 from handler.send_telegram_messages_handler import SendTelegramMessagesHandler
 from interface.event_type import EventType
 from utils.event_bus import async_event_bus
 
-# set up logging
+
 logging.getLogger().setLevel(logging.INFO)
 logger = logging.getLogger("lambda_function")
 
-# load environment variables
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+BOT_TOKEN: str | None = os.getenv("BOT_TOKEN")
 
-# initialize the handlers
+# handlers are singletons registering once at cold-start avoids re-subscription
 IncomingTelegramMessagesHandler().init(async_event_bus)
 SendTelegramMessagesHandler(BOT_TOKEN).init(async_event_bus)
 
-# handle async bus publishing
-async def publish_async(event_type, event):
-    await async_event_bus.publish(event_type, event)
 
-def lambda_handler(event, context):
+async def publish_async(event_type: EventType, data: Any) -> None:
+    """thin coroutine wrapper so asyncio.run has a single awaitable to run."""
+    await async_event_bus.publish(event_type, data)
+
+
+def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """parse the api gateway payload and fan-out to registered event handlers.
+
+    returns a minimal api gateway proxy response as telegram only requires 200 ok.
+    """
     try:
-        # parse the incoming data
-        body = json.loads(event.get("body", "{}"))
-        logger.info(f"Incoming request body: {body}")
+        body: dict[str, Any] = json.loads(event.get("body", "{}"))
+        logger.info(f"incoming request received (keys={list(body.keys())})")
 
-        # telegram data contains update_id in body
         if "update_id" in body and "message" in body:
-            message = body["message"]
-            message_id = message["message_id"]
-            message_text = message["text"]
-            username = message["from"]["username"]
-            chat_id = message["chat"]["id"]
-            chat_type = message["chat"]["type"]
+            update = TelegramUpdateModel.model_validate(body)
             telegram_message = TelegramMessageDTO(
-                message_id=message_id,
-                text=message_text,
-                chat_id=chat_id,
-                chat_type=chat_type,
-                username=username
+                message_id=update.message.message_id,
+                text=update.message.text,
+                chat_id=update.message.chat.id,
+                chat_type=update.message.chat.type,
+                username=update.message.from_.username,
             )
-            asyncio.run(publish_async(EventType.incoming_telegram_message, telegram_message))
+            asyncio.run(publish_async(EventType.INCOMING_TELEGRAM_MESSAGE, telegram_message))
 
-        # return success response
         return {"statusCode": 200, "body": "ok"}
-    except json.JSONDecodeError as json_err:
-        logger.error(f"JSON decoding error: {json_err}", exc_info=True)
+
+    except json.JSONDecodeError as exc:
+        logger.error(f"json decoding error: {exc}", exc_info=True)
         return {"statusCode": 400, "body": "Invalid JSON format"}
-    except Exception as e:
-        logger.error(f"Unhandled error: {e}", exc_info=True)
-        return {"statusCode": 500, "body": f"Error: {e}"}
+
+    except ValidationError as exc:
+        logger.error(f"telegram payload validation failed: {exc}", exc_info=True)
+        return {"statusCode": 400, "body": "Invalid payload structure"}
+
+    except Exception as exc:  # noqa: BLE001 last-resort lambda safety net
+        logger.error(f"unhandled error in lambda_handler: {exc}", exc_info=True)
+        return {"statusCode": 500, "body": "Internal server error"}
