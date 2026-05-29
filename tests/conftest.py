@@ -1,6 +1,7 @@
-import sys
+"""Root pytest configuration — runs before any test module is imported."""
 
-from pathlib import Path
+import os
 
-sys.path.insert(0, str(Path(__file__).parent / "src"))
-
+# ensure a dummy token is present so lambda_function module-level code
+# can initialise SendTelegramMessagesHandler without raising at import time.
+os.environ.setdefault("BOT_TOKEN", "test_token")
