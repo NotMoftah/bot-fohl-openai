@@ -46,7 +46,7 @@
 ## Testing
 
 - No live AWS calls. Use `moto` for all DynamoDB mocking.
-- Naming: `test__[function]__[scenario]__[expected_behavior]`
+- Naming: `test_[function]_[scenario]_[expected_behavior]`
 - AAA structure: three isolated blocks with blank lines between them.
 
 ```python
