@@ -12,6 +12,7 @@ from pydantic import ValidationError
 from entity.dto import TelegramMessageDTO
 from entity.telegram import TelegramUpdateModel
 from handler.incoming_telegram_message_handler import IncomingTelegramMessageHandler
+from handler.incoming_user_command_handler import IncomingUserCommandHandler
 from handler.outgoing_telegram_message_handler import OutgoingTelegramMessageHandler
 from interface.enum_type import EventType
 from repository.user_message_repository import UserMessageRepository
@@ -38,6 +39,7 @@ bot_messages_repository = BotMessageRepository(bot_messages_table)
 
 # handlers are singletons registering once at cold-start avoids re-subscription
 IncomingTelegramMessageHandler(user_messages_repository).init(async_event_bus)
+IncomingUserCommandHandler(bot_messages_repository).init(async_event_bus)
 OutgoingTelegramMessageHandler(BOT_TOKEN).init(async_event_bus)
 
 
