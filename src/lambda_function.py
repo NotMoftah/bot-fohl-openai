@@ -2,12 +2,15 @@ import os
 import json
 import asyncio
 import logging
+
+import boto3
+
 from typing import Any
 
 from pydantic import ValidationError
 
 from entity.dto import TelegramMessageDTO
-from entity.models import TelegramUpdateModel
+from entity.telegram import TelegramUpdateModel
 from handler.incoming_telegram_messages_handler import IncomingTelegramMessagesHandler
 from handler.send_telegram_messages_handler import SendTelegramMessagesHandler
 from interface.event_type import EventType
@@ -17,10 +20,16 @@ from utils.event_bus import async_event_bus
 logging.getLogger().setLevel(logging.INFO)
 logger = logging.getLogger("lambda_function")
 
+# env vars
 BOT_TOKEN: str | None = os.getenv("BOT_TOKEN")
+DYNAMODB_MESSAGES_TABLE: str | None = os.getenv("DYNAMODB_TABLE_MESSAGES")
+
+# dynamodb
+DYNAMODB = boto3.resource("dynamodb")
+MESSAGES_TABLE = DYNAMODB.Table(DYNAMODB_MESSAGES_TABLE)
 
 # handlers are singletons registering once at cold-start avoids re-subscription
-IncomingTelegramMessagesHandler().init(async_event_bus)
+IncomingTelegramMessagesHandler(MESSAGES_TABLE).init(async_event_bus)
 SendTelegramMessagesHandler(BOT_TOKEN).init(async_event_bus)
 
 
