@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -18,9 +20,12 @@ class TelegramMessageModel(BaseModel):
 
     message_id: int
     date: int
-    text: str | None
     from_: TelegramFromModel = Field(alias="from")
     chat: TelegramChatModel
+
+    text: str | None = None
+    photo: list[Any] | None = None
+    caption: str | None = None
 
 
 class TelegramUpdateModel(BaseModel):
