@@ -6,7 +6,7 @@ import logging
 from typing import Any, Dict, Set
 
 from interface.event_bus import AsyncHandler, EventBus
-from interface.event_type import EventType
+from interface.enum_type import EventType
 
 
 class AsyncEventBus(EventBus):

@@ -1,7 +1,7 @@
 import pytest
 
 from utils.event_bus import AsyncEventBus
-from interface.event_type import EventType
+from interface.enum_type import EventType
 
 
 # ---------------------------------------------------------------------------
@@ -56,31 +56,31 @@ class TestAsyncEventBusSingleton:
 class TestAsyncEventBusSubscribe:
     def test_subscribe_adds_handler_to_subscribers(self, bus: AsyncEventBus) -> None:
         # arrange / act
-        bus.subscribe(EventType.INCOMING_TELEGRAM_MESSAGE, _noop_handler)
+        bus.subscribe(EventType.INCOMING_USER_MESSAGE, _noop_handler)
 
         # assert
-        assert _noop_handler in bus._subscribers[EventType.INCOMING_TELEGRAM_MESSAGE]
+        assert _noop_handler in bus._subscribers[EventType.INCOMING_USER_MESSAGE]
 
     def test_subscribe_same_handler_twice_stores_it_once(self, bus: AsyncEventBus) -> None:
         # arrange
-        bus.subscribe(EventType.INCOMING_TELEGRAM_MESSAGE, _noop_handler)
+        bus.subscribe(EventType.INCOMING_USER_MESSAGE, _noop_handler)
 
         # act
-        bus.subscribe(EventType.INCOMING_TELEGRAM_MESSAGE, _noop_handler)
+        bus.subscribe(EventType.INCOMING_USER_MESSAGE, _noop_handler)
 
         # assert - set deduplication must keep only one entry
-        assert len(bus._subscribers[EventType.INCOMING_TELEGRAM_MESSAGE]) == 1
+        assert len(bus._subscribers[EventType.INCOMING_USER_MESSAGE]) == 1
 
     def test_subscribe_multiple_handlers_stores_all(self, bus: AsyncEventBus) -> None:
         # arrange
         async def handler_b(data: object) -> None: ...
 
         # act
-        bus.subscribe(EventType.INCOMING_TELEGRAM_MESSAGE, _noop_handler)
-        bus.subscribe(EventType.INCOMING_TELEGRAM_MESSAGE, handler_b)
+        bus.subscribe(EventType.INCOMING_USER_MESSAGE, _noop_handler)
+        bus.subscribe(EventType.INCOMING_USER_MESSAGE, handler_b)
 
         # assert
-        assert len(bus._subscribers[EventType.INCOMING_TELEGRAM_MESSAGE]) == 2
+        assert len(bus._subscribers[EventType.INCOMING_USER_MESSAGE]) == 2
 
 
 # ---------------------------------------------------------------------------
@@ -90,31 +90,31 @@ class TestAsyncEventBusSubscribe:
 class TestAsyncEventBusUnsubscribe:
     def test_unsubscribe_removes_handler_from_subscribers(self, bus: AsyncEventBus) -> None:
         # arrange
-        bus.subscribe(EventType.INCOMING_TELEGRAM_MESSAGE, _noop_handler)
+        bus.subscribe(EventType.INCOMING_USER_MESSAGE, _noop_handler)
 
         # act
-        bus.unsubscribe(EventType.INCOMING_TELEGRAM_MESSAGE, _noop_handler)
+        bus.unsubscribe(EventType.INCOMING_USER_MESSAGE, _noop_handler)
 
         # assert
         assert _noop_handler not in bus._subscribers.get(
-            EventType.INCOMING_TELEGRAM_MESSAGE, set()
+            EventType.INCOMING_USER_MESSAGE, set()
         )
 
     def test_unsubscribe_nonexistent_event_type_does_not_raise(
         self, bus: AsyncEventBus
     ) -> None:
         # arrange / act / assert - must be a no-op, not a KeyError
-        bus.unsubscribe(EventType.INCOMING_TELEGRAM_MESSAGE, _noop_handler)
+        bus.unsubscribe(EventType.INCOMING_USER_MESSAGE, _noop_handler)
 
     def test_unsubscribe_nonexistent_handler_does_not_raise(
         self, bus: AsyncEventBus
     ) -> None:
         # arrange
-        bus.subscribe(EventType.INCOMING_TELEGRAM_MESSAGE, _noop_handler)
+        bus.subscribe(EventType.INCOMING_USER_MESSAGE, _noop_handler)
 
         # act / assert - discarding a handler that was never added is safe
         async def other(data: object) -> None: ...
-        bus.unsubscribe(EventType.INCOMING_TELEGRAM_MESSAGE, other)
+        bus.unsubscribe(EventType.INCOMING_USER_MESSAGE, other)
 
 
 # ---------------------------------------------------------------------------
@@ -131,10 +131,10 @@ class TestAsyncEventBusPublish:
         async def capture(data: object) -> None:
             received.append(data)
 
-        bus.subscribe(EventType.INCOMING_TELEGRAM_MESSAGE, capture)
+        bus.subscribe(EventType.INCOMING_USER_MESSAGE, capture)
 
         # act
-        await bus.publish(EventType.INCOMING_TELEGRAM_MESSAGE, "payload")
+        await bus.publish(EventType.INCOMING_USER_MESSAGE, "payload")
 
         # assert
         assert received == ["payload"]
@@ -151,11 +151,11 @@ class TestAsyncEventBusPublish:
         async def handler_b(data: object) -> None:
             calls.append("b")
 
-        bus.subscribe(EventType.INCOMING_TELEGRAM_MESSAGE, handler_a)
-        bus.subscribe(EventType.INCOMING_TELEGRAM_MESSAGE, handler_b)
+        bus.subscribe(EventType.INCOMING_USER_MESSAGE, handler_a)
+        bus.subscribe(EventType.INCOMING_USER_MESSAGE, handler_b)
 
         # act
-        await bus.publish(EventType.INCOMING_TELEGRAM_MESSAGE, None)
+        await bus.publish(EventType.INCOMING_USER_MESSAGE, None)
 
         # assert
         assert sorted(calls) == ["a", "b"]
@@ -164,7 +164,7 @@ class TestAsyncEventBusPublish:
         self, bus: AsyncEventBus
     ) -> None:
         # arrange / act / assert
-        await bus.publish(EventType.INCOMING_TELEGRAM_MESSAGE, "data")
+        await bus.publish(EventType.INCOMING_USER_MESSAGE, "data")
 
     async def test_publish_to_unknown_event_type_does_not_raise(
         self, bus: AsyncEventBus
@@ -206,11 +206,11 @@ class TestAsyncEventBusSafeExecute:
         async def good_handler(data: object) -> None:
             completed.append("good")
 
-        bus.subscribe(EventType.INCOMING_TELEGRAM_MESSAGE, _raising_handler)
-        bus.subscribe(EventType.INCOMING_TELEGRAM_MESSAGE, good_handler)
+        bus.subscribe(EventType.INCOMING_USER_MESSAGE, _raising_handler)
+        bus.subscribe(EventType.INCOMING_USER_MESSAGE, good_handler)
 
         # act
-        await bus.publish(EventType.INCOMING_TELEGRAM_MESSAGE, None)
+        await bus.publish(EventType.INCOMING_USER_MESSAGE, None)
 
         # assert - the good handler must still run despite the failing sibling
         assert "good" in completed

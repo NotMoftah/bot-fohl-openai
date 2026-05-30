@@ -11,10 +11,12 @@ from pydantic import ValidationError
 
 from entity.dto import TelegramMessageDTO
 from entity.telegram import TelegramUpdateModel
-from handler.incoming_telegram_messages_handler import IncomingTelegramMessagesHandler
-from handler.send_telegram_messages_handler import SendTelegramMessagesHandler
-from interface.event_type import EventType
-from repository.message_repository import ChatMessageRepository
+from handler.incoming_telegram_message_handler import IncomingTelegramMessageHandler
+from handler.incoming_user_command_handler import IncomingUserCommandHandler
+from handler.outgoing_telegram_message_handler import OutgoingTelegramMessageHandler
+from interface.enum_type import EventType
+from repository.user_message_repository import UserMessageRepository
+from repository.bot_message_repository import BotMessageRepository
 from utils.event_bus import async_event_bus
 
 
@@ -23,16 +25,22 @@ logger = logging.getLogger("lambda_function")
 
 # env vars
 BOT_TOKEN: str | None = os.getenv("BOT_TOKEN")
-DYNAMODB_MESSAGES_TABLE: str | None = os.getenv("DYNAMODB_TABLE_MESSAGES")
+TABLE_USER_MESSAGES: str | None = os.getenv("DYNAMODB_TABLE_USER_MESSAGES")
+TABLE_BOT_MESSAGES: str | None = os.getenv("DYNAMODB_TABLE_BOT_MESSAGES")
 
 # dynamodb
 DYNAMODB = boto3.resource("dynamodb")
-MESSAGES_TABLE = DYNAMODB.Table(DYNAMODB_MESSAGES_TABLE)
-chat_message_repository = ChatMessageRepository(MESSAGES_TABLE)
+user_messages_table = DYNAMODB.Table(TABLE_USER_MESSAGES)
+bot_messages_table = DYNAMODB.Table(TABLE_BOT_MESSAGES)
+
+# repositories
+user_messages_repository = UserMessageRepository(user_messages_table)
+bot_messages_repository = BotMessageRepository(bot_messages_table)
 
 # handlers are singletons registering once at cold-start avoids re-subscription
-IncomingTelegramMessagesHandler(chat_message_repository).init(async_event_bus)
-SendTelegramMessagesHandler(BOT_TOKEN).init(async_event_bus)
+IncomingTelegramMessageHandler(user_messages_repository).init(async_event_bus)
+IncomingUserCommandHandler(bot_messages_repository).init(async_event_bus)
+OutgoingTelegramMessageHandler(BOT_TOKEN).init(async_event_bus)
 
 
 async def publish_async(event_type: EventType, data: Any) -> None:
@@ -60,7 +68,7 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
                 timestamp=update.message.date,
                 raw_payload=body.get("message", {}),
             )
-            asyncio.run(publish_async(EventType.INCOMING_TELEGRAM_MESSAGE, telegram_message))
+            asyncio.run(publish_async(EventType.INCOMING_USER_MESSAGE, telegram_message))
 
         return {"statusCode": 200, "body": "ok"}
 

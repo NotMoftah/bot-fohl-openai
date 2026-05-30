@@ -1,12 +1,11 @@
-import json
 import os
 import sys
+import datetime
 
 import boto3
 
-from dataclasses import asdict
-
-from repository.user_message_repository import UserMessageRepository
+from entity.models import BotMessage
+from repository.bot_message_repository import BotMessageRepository
 
 
 def main() -> None:
@@ -24,17 +23,20 @@ def main() -> None:
     # (e.g., AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
     dynamodb = boto3.resource("dynamodb", region_name=region)
     table = dynamodb.Table(table_name)
-    repo = UserMessageRepository(table)
+    repo = BotMessageRepository(table)
 
     # example params - modify these for your manual test
-    print(f"querying table '{table_name}' in region '{region}' for chat {chat_id}...")
+    print(f"inserting into table '{table_name}' in region '{region}' for chat {chat_id}...")
 
     try:
-        messages = repo.get_by_chat_id(chat_id=chat_id)
-        print(f"found {len(messages)} messages:")
-        for message in messages:
-            clean_dict = {k: v for k, v in asdict(message).items() if k != 'raw_payload'}
-            print(json.dumps(clean_dict, indent=4))
+        message = BotMessage(
+            chat_id=chat_id,
+            timestamp=int(datetime.datetime.now().timestamp()),
+            text="Hello from the bot!",
+            raw_payload={"example": "payload"}
+        )
+        result = repo.save(message)
+        print("message inserted successfully. Result:", result)
     except Exception as exc:  # pylint: disable=broad-except
         print(f"failed to query dynamodb: {exc}")
 
