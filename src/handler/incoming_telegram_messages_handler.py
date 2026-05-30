@@ -28,6 +28,10 @@ class IncomingTelegramMessagesHandler(EventHandler):
     async def handle_incoming_telegram_message(self, message: TelegramMessageDTO) -> None:
         """store incoming telegram messages into message repository."""
         self._logger.info(f"received incoming telegram message: {message.message_id}")
+        if message.text in ["", None]:
+            self._logger.warning(f"skipping message with no text: {message.message_id}")
+            return
+
         self._messages_repo.save(ChatMessage(
             message_id=message.message_id,
             chat_id=message.chat_id,
