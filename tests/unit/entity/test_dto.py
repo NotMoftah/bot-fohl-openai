@@ -141,7 +141,15 @@ class TestTelegramMessageDTOSerialize:
         result = sample_dto.serialize()
 
         # assert
-        assert set(result.keys()) == {"message_id", "chat_id", "chat_type", "username", "text"}
+        assert set(result.keys()) == {
+            "message_id",
+            "chat_id",
+            "chat_type",
+            "username",
+            "text",
+            "timestamp",
+            "raw_payload",
+        }
 
     def test_telegram_message_dto_serialize_values_match_fields(
         self, sample_dto: TelegramMessageDTO

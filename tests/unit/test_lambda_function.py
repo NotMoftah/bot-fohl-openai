@@ -20,6 +20,7 @@ VALID_TELEGRAM_BODY = {
         "text": "hello",
         "from": {"username": "alice"},
         "chat": {"id": 42, "type": "private"},
+        "date": 1780000000
     },
 }
 

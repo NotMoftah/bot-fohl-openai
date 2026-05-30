@@ -46,6 +46,8 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
                 chat_id=update.message.chat.id,
                 chat_type=update.message.chat.type,
                 username=update.message.from_.username,
+                timestamp=update.message.date,
+                raw_payload=body.get("message", {}),
             )
             asyncio.run(publish_async(EventType.INCOMING_TELEGRAM_MESSAGE, telegram_message))
 

@@ -21,6 +21,8 @@
 
 - All inputs validated with `pydantic`. All requests and responses use pydantic models.
 - Structured data and DTOs use `dataclasses`. No plain dicts for complex structures.
+- All database interactions must use a repository pattern. 
+- Repositories should be singletons and initialized with a DynamoDB client/resource. No global state or mutable singletons.
 
 ---
 

@@ -17,6 +17,7 @@ class TelegramMessageModel(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     message_id: int
+    date: int
     text: str
     from_: TelegramFromModel = Field(alias="from")
     chat: TelegramChatModel
@@ -25,4 +26,3 @@ class TelegramMessageModel(BaseModel):
 class TelegramUpdateModel(BaseModel):
     update_id: int
     message: TelegramMessageModel
-

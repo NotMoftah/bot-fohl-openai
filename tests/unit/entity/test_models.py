@@ -15,6 +15,7 @@ VALID_UPDATE = {
         "text": "hi",
         "from": {"username": "alice"},
         "chat": {"id": 42, "type": "private"},
+        "date": 1780000000
     },
 }
 
@@ -56,6 +57,7 @@ class TestTelegramMessageModel:
             "text": "hello",
             "from": {"username": "bob"},
             "chat": {"id": 5, "type": "group"},
+            "date": 1780000000
         }
 
         # act
