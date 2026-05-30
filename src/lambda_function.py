@@ -14,6 +14,7 @@ from entity.telegram import TelegramUpdateModel
 from handler.incoming_telegram_messages_handler import IncomingTelegramMessagesHandler
 from handler.send_telegram_messages_handler import SendTelegramMessagesHandler
 from interface.event_type import EventType
+from repository.message_repository import ChatMessageRepository
 from utils.event_bus import async_event_bus
 
 
@@ -27,9 +28,10 @@ DYNAMODB_MESSAGES_TABLE: str | None = os.getenv("DYNAMODB_TABLE_MESSAGES")
 # dynamodb
 DYNAMODB = boto3.resource("dynamodb")
 MESSAGES_TABLE = DYNAMODB.Table(DYNAMODB_MESSAGES_TABLE)
+chat_message_repository = ChatMessageRepository(MESSAGES_TABLE)
 
 # handlers are singletons registering once at cold-start avoids re-subscription
-IncomingTelegramMessagesHandler(MESSAGES_TABLE).init(async_event_bus)
+IncomingTelegramMessagesHandler(chat_message_repository).init(async_event_bus)
 SendTelegramMessagesHandler(BOT_TOKEN).init(async_event_bus)
 
 

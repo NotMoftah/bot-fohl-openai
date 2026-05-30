@@ -6,9 +6,9 @@
     "version": {
       "type": "string",
       "enum": [
-        "1.0"
+        "v1.0"
       ],
-      "description": "The schema version, strictly '1.0'."
+      "description": "The schema version, strictly 'v1.0'."
     },
     "commands": {
       "type": "array",

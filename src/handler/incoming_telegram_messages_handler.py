@@ -26,7 +26,7 @@ class IncomingTelegramMessagesHandler(EventHandler):
         return True
 
     async def handle_incoming_telegram_message(self, message: TelegramMessageDTO) -> None:
-        """echo the original message text back to the sender via the bus."""
+        """store incoming telegram messages into message repository."""
         self._logger.info(f"received incoming telegram message: {message.message_id}")
         self._messages_repo.save(ChatMessage(
             message_id=message.message_id,
