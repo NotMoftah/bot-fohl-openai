@@ -1,12 +1,14 @@
 import pytest
+
 from pydantic import ValidationError
 
-from entity.models import (
+from entity.telegram import (
     TelegramChatModel,
     TelegramFromModel,
     TelegramMessageModel,
     TelegramUpdateModel,
 )
+
 
 VALID_UPDATE = {
     "update_id": 1,
