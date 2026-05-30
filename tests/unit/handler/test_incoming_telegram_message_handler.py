@@ -4,10 +4,10 @@ import pytest
 
 from unittest.mock import AsyncMock, MagicMock
 
-from entity.dto import TelegramMessageDTO
+from entity.dto import TelegramMessageDTO, UserCommandDTO
 from entity.models import ChatMessage
 from handler.incoming_telegram_message_handler import IncomingTelegramMessageHandler
-from interface.enum_type import EventType
+from interface.enum_type import EventType, UserCommandType
 
 
 # ---------------------------------------------------------------------------
@@ -209,10 +209,174 @@ class TestIncomingTelegramMessagesHandlerHandle:
         caplog: pytest.LogCaptureFixture,
     ) -> None:
         # arrange / act
-        with caplog.at_level(logging.INFO, logger="IncomingTelegramMessagesHandler"):
+        with caplog.at_level(logging.INFO, logger="IncomingTelegramMessageHandler"):
             await handler.handle_incoming_telegram_message(incoming_message)
 
         # assert
         messages = [r.message for r in caplog.records]
         assert any("received" in m for m in messages)
         assert any("saved" in m for m in messages)
+
+
+# ---------------------------------------------------------------------------
+# handle_incoming_telegram_message -- empty / None text guard
+# ---------------------------------------------------------------------------
+
+class TestIncomingTelegramMessageHandlerSkipsEmptyText:
+    async def test_handle_skips_save_when_text_is_empty_string(
+        self,
+        handler: IncomingTelegramMessageHandler,
+        mock_repo: MagicMock,
+    ) -> None:
+        # arrange
+        message = TelegramMessageDTO(
+            message_id=2, chat_id=999, username="alice",
+            text="", chat_type="private", timestamp=1_780_000_000,
+        )
+
+        # act
+        await handler.handle_incoming_telegram_message(message)
+
+        # assert
+        mock_repo.save.assert_not_called()
+
+    async def test_handle_skips_save_when_text_is_none(
+        self,
+        handler: IncomingTelegramMessageHandler,
+        mock_repo: MagicMock,
+    ) -> None:
+        # arrange
+        message = TelegramMessageDTO(
+            message_id=3, chat_id=999, username="alice",
+            text=None, chat_type="private", timestamp=1_780_000_000,
+        )
+
+        # act
+        await handler.handle_incoming_telegram_message(message)
+
+        # assert
+        mock_repo.save.assert_not_called()
+
+    async def test_handle_does_not_publish_event_when_text_is_empty(
+        self,
+        handler: IncomingTelegramMessageHandler,
+        mock_bus: MagicMock,
+    ) -> None:
+        # arrange
+        message = TelegramMessageDTO(
+            message_id=4, chat_id=999, username="alice",
+            text="", chat_type="private", timestamp=1_780_000_000,
+        )
+
+        # act
+        await handler.handle_incoming_telegram_message(message)
+
+        # assert
+        mock_bus.publish.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# handle_incoming_telegram_message -- ellipsis triggers LIST_ACTIONS command
+# ---------------------------------------------------------------------------
+
+class TestIncomingTelegramMessageHandlerEllipsisCommand:
+    @pytest.mark.parametrize("ellipsis_text", ["...", "\u2026"])
+    async def test_handle_publishes_incoming_user_command_event(
+        self,
+        handler: IncomingTelegramMessageHandler,
+        mock_bus: MagicMock,
+        ellipsis_text: str,
+    ) -> None:
+        # arrange
+        message = TelegramMessageDTO(
+            message_id=5, chat_id=999, username="alice",
+            text=ellipsis_text, chat_type="private", timestamp=1_780_000_000,
+        )
+
+        # act
+        await handler.handle_incoming_telegram_message(message)
+
+        # assert
+        mock_bus.publish.assert_called_once()
+        event_type = mock_bus.publish.call_args.kwargs["event_type"]
+        assert event_type == EventType.INCOMING_USER_COMMAND
+
+    @pytest.mark.parametrize("ellipsis_text", ["...", "\u2026"])
+    async def test_handle_publishes_list_actions_command_type(
+        self,
+        handler: IncomingTelegramMessageHandler,
+        mock_bus: MagicMock,
+        ellipsis_text: str,
+    ) -> None:
+        # arrange
+        message = TelegramMessageDTO(
+            message_id=6, chat_id=999, username="alice",
+            text=ellipsis_text, chat_type="private", timestamp=1_780_000_000,
+        )
+
+        # act
+        await handler.handle_incoming_telegram_message(message)
+
+        # assert
+        data: UserCommandDTO = mock_bus.publish.call_args.kwargs["data"]
+        assert data.type == UserCommandType.LIST_ACTIONS
+
+    @pytest.mark.parametrize("ellipsis_text", ["...", "\u2026"])
+    async def test_handle_publishes_command_with_correct_chat_id(
+        self,
+        handler: IncomingTelegramMessageHandler,
+        mock_bus: MagicMock,
+        ellipsis_text: str,
+    ) -> None:
+        # arrange
+        message = TelegramMessageDTO(
+            message_id=7, chat_id=999, username="alice",
+            text=ellipsis_text, chat_type="private", timestamp=1_780_000_000,
+        )
+
+        # act
+        await handler.handle_incoming_telegram_message(message)
+
+        # assert
+        data: UserCommandDTO = mock_bus.publish.call_args.kwargs["data"]
+        assert data.chat_id == message.chat_id
+
+    @pytest.mark.parametrize("ellipsis_text", ["...", "\u2026"])
+    async def test_handle_publishes_command_with_correct_username(
+        self,
+        handler: IncomingTelegramMessageHandler,
+        mock_bus: MagicMock,
+        ellipsis_text: str,
+    ) -> None:
+        # arrange
+        message = TelegramMessageDTO(
+            message_id=8, chat_id=999, username="alice",
+            text=ellipsis_text, chat_type="private", timestamp=1_780_000_000,
+        )
+
+        # act
+        await handler.handle_incoming_telegram_message(message)
+
+        # assert
+        data: UserCommandDTO = mock_bus.publish.call_args.kwargs["data"]
+        assert data.username == message.username
+
+    @pytest.mark.parametrize("ellipsis_text", ["...", "\u2026"])
+    async def test_handle_does_not_save_to_repo_when_ellipsis(
+        self,
+        handler: IncomingTelegramMessageHandler,
+        mock_repo: MagicMock,
+        ellipsis_text: str,
+    ) -> None:
+        # arrange
+        message = TelegramMessageDTO(
+            message_id=9, chat_id=999, username="alice",
+            text=ellipsis_text, chat_type="private", timestamp=1_780_000_000,
+        )
+
+        # act
+        await handler.handle_incoming_telegram_message(message)
+
+        # assert
+        mock_repo.save.assert_not_called()
+
