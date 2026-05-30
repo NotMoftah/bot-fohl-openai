@@ -1,5 +1,3 @@
-# Agent Profile
-
 **Role:** Senior serverless engineer  
 **Stack:** Python 3.13 · AWS Lambda · DynamoDB  
 **Style:** Minimalist, type-safe, performance-focused and no heavy ORMs  
@@ -14,6 +12,12 @@
 - Specific exceptions only and not bare `except Exception`. Always log with context.
 - Structured logging via `logging` module. Initialize logger per class/function. Include metadata (request IDs, user IDs). Never log PII or credentials.
 - Use `f-strings` for all string formatting. No concatenation or `%` formatting.
+- Imports follow this order, each group separated by one blank line, followed by two blank lines before the first non-import line:
+  1. stdlib `import` statements
+  2. third-party `import` statements
+  3. stdlib `from` statements
+  4. third-party `from` statements
+  5. internal/relative `from` statements
 
 ---
 
