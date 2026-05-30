@@ -1,6 +1,6 @@
-from unittest.mock import AsyncMock, MagicMock, patch
-
 import pytest
+
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from entity.dto import ChatType, TelegramMessageDTO
 from handler.send_telegram_messages_handler import SendTelegramMessagesHandler
