@@ -17,7 +17,6 @@ class ChatType(StrEnum):
 @dataclass
 class TelegramMessageDTO:
     """immutable carrier for a single telegram message payload."""
-
     message_id: Optional[int]
     chat_id: int
     username: str
@@ -25,6 +24,18 @@ class TelegramMessageDTO:
     chat_type: str  # plain str as telegram may send values outside ChatType
     timestamp: int = 0
     raw_payload: dict[str, object] = dataclasses.field(default_factory=dict)
+
+    def serialize(self) -> dict[str, object]:
+        """return a json-serializable dict of all dto fields."""
+        return dataclasses.asdict(self)
+
+
+@dataclass
+class UserCommandDTO:
+    """immutable carrier for a single user command payload."""
+    type: str
+    chat_id: int
+    username: str
 
     def serialize(self) -> dict[str, object]:
         """return a json-serializable dict of all dto fields."""

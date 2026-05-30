@@ -6,8 +6,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 from entity.dto import TelegramMessageDTO
 from entity.models import ChatMessage
-from handler.incoming_telegram_messages_handler import IncomingTelegramMessagesHandler
-from interface.event_type import EventType
+from handler.incoming_telegram_message_handler import IncomingTelegramMessageHandler
+from interface.enum_type import EventType
 
 
 # ---------------------------------------------------------------------------
@@ -31,8 +31,8 @@ def mock_bus() -> MagicMock:
 
 
 @pytest.fixture()
-def handler(mock_bus: MagicMock, mock_repo: MagicMock) -> IncomingTelegramMessagesHandler:
-    h = IncomingTelegramMessagesHandler(messages_repo=mock_repo)
+def handler(mock_bus: MagicMock, mock_repo: MagicMock) -> IncomingTelegramMessageHandler:
+    h = IncomingTelegramMessageHandler(user_messages_repo=mock_repo)
     h.init(mock_bus)
     return h
 
@@ -57,7 +57,7 @@ def incoming_message() -> TelegramMessageDTO:
 class TestIncomingTelegramMessagesHandlerInit:
     def test_init_returns_true_on_success(self, mock_bus: MagicMock, mock_repo: MagicMock) -> None:
         # arrange
-        h = IncomingTelegramMessagesHandler(messages_repo=mock_repo)
+        h = IncomingTelegramMessageHandler(user_messages_repo=mock_repo)
 
         # act
         result = h.init(mock_bus)
@@ -69,14 +69,14 @@ class TestIncomingTelegramMessagesHandlerInit:
         self, mock_bus: MagicMock, mock_repo: MagicMock
     ) -> None:
         # arrange
-        h = IncomingTelegramMessagesHandler(messages_repo=mock_repo)
+        h = IncomingTelegramMessageHandler(user_messages_repo=mock_repo)
 
         # act
         h.init(mock_bus)
 
         # assert
         mock_bus.subscribe.assert_called_once_with(
-            EventType.INCOMING_TELEGRAM_MESSAGE,
+            EventType.INCOMING_USER_MESSAGE,
             h.handle_incoming_telegram_message,
         )
 
@@ -88,7 +88,7 @@ class TestIncomingTelegramMessagesHandlerInit:
 class TestIncomingTelegramMessagesHandlerHandle:
     async def test_handle_incoming_telegram_message_calls_repo_save(
         self,
-        handler: IncomingTelegramMessagesHandler,
+        handler: IncomingTelegramMessageHandler,
         mock_repo: MagicMock,
         incoming_message: TelegramMessageDTO,
     ) -> None:
@@ -100,7 +100,7 @@ class TestIncomingTelegramMessagesHandlerHandle:
 
     async def test_handle_incoming_telegram_message_saves_chat_message_instance(
         self,
-        handler: IncomingTelegramMessagesHandler,
+        handler: IncomingTelegramMessageHandler,
         mock_repo: MagicMock,
         incoming_message: TelegramMessageDTO,
     ) -> None:
@@ -113,7 +113,7 @@ class TestIncomingTelegramMessagesHandlerHandle:
 
     async def test_handle_incoming_telegram_message_maps_message_id(
         self,
-        handler: IncomingTelegramMessagesHandler,
+        handler: IncomingTelegramMessageHandler,
         mock_repo: MagicMock,
         incoming_message: TelegramMessageDTO,
     ) -> None:
@@ -126,7 +126,7 @@ class TestIncomingTelegramMessagesHandlerHandle:
 
     async def test_handle_incoming_telegram_message_maps_chat_id(
         self,
-        handler: IncomingTelegramMessagesHandler,
+        handler: IncomingTelegramMessageHandler,
         mock_repo: MagicMock,
         incoming_message: TelegramMessageDTO,
     ) -> None:
@@ -139,7 +139,7 @@ class TestIncomingTelegramMessagesHandlerHandle:
 
     async def test_handle_incoming_telegram_message_maps_text(
         self,
-        handler: IncomingTelegramMessagesHandler,
+        handler: IncomingTelegramMessageHandler,
         mock_repo: MagicMock,
         incoming_message: TelegramMessageDTO,
     ) -> None:
@@ -152,7 +152,7 @@ class TestIncomingTelegramMessagesHandlerHandle:
 
     async def test_handle_incoming_telegram_message_maps_username(
         self,
-        handler: IncomingTelegramMessagesHandler,
+        handler: IncomingTelegramMessageHandler,
         mock_repo: MagicMock,
         incoming_message: TelegramMessageDTO,
     ) -> None:
@@ -165,7 +165,7 @@ class TestIncomingTelegramMessagesHandlerHandle:
 
     async def test_handle_incoming_telegram_message_maps_chat_type(
         self,
-        handler: IncomingTelegramMessagesHandler,
+        handler: IncomingTelegramMessageHandler,
         mock_repo: MagicMock,
         incoming_message: TelegramMessageDTO,
     ) -> None:
@@ -178,7 +178,7 @@ class TestIncomingTelegramMessagesHandlerHandle:
 
     async def test_handle_incoming_telegram_message_maps_timestamp(
         self,
-        handler: IncomingTelegramMessagesHandler,
+        handler: IncomingTelegramMessageHandler,
         mock_repo: MagicMock,
         incoming_message: TelegramMessageDTO,
     ) -> None:
@@ -191,7 +191,7 @@ class TestIncomingTelegramMessagesHandlerHandle:
 
     async def test_handle_incoming_telegram_message_maps_raw_payload(
         self,
-        handler: IncomingTelegramMessagesHandler,
+        handler: IncomingTelegramMessageHandler,
         mock_repo: MagicMock,
         incoming_message: TelegramMessageDTO,
     ) -> None:
@@ -204,7 +204,7 @@ class TestIncomingTelegramMessagesHandlerHandle:
 
     async def test_handle_incoming_telegram_message_logs_received_and_saved(
         self,
-        handler: IncomingTelegramMessagesHandler,
+        handler: IncomingTelegramMessageHandler,
         incoming_message: TelegramMessageDTO,
         caplog: pytest.LogCaptureFixture,
     ) -> None:

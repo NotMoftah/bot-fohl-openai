@@ -9,11 +9,11 @@ from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
 from entity.models import ChatMessage
-from interface.dynamodb_repository import IChatMessageRepository
+from interface.dynamodb_repository import IUserMessageRepository
 
 
-class ChatMessageRepository(IChatMessageRepository):
-    """repository for interacting with the telegram messages dynamodb table.
+class UserMessageRepository(IUserMessageRepository):
+    """repository for interacting with the user messages dynamodb table.
 
     uses chat_id as partition key and timestamp as sort key.
     """
@@ -23,7 +23,7 @@ class ChatMessageRepository(IChatMessageRepository):
         self._logger = logging.getLogger(self.__class__.__name__)
 
     def save(self, chat_message: ChatMessage) -> bool:
-        """persist a telegram message to dynamodb."""
+        """persist a user message to dynamodb."""
         try:
             item = {
                 "chat_id": str(chat_message.chat_id),

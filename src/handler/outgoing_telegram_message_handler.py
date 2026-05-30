@@ -6,10 +6,10 @@ from telegram import Bot
 from entity.dto import ChatType, TelegramMessageDTO
 from interface.event_bus import EventBus
 from interface.event_handler import EventHandler
-from interface.event_type import EventType
+from interface.enum_type import EventType
 
 
-class SendTelegramMessagesHandler(EventHandler):
+class OutgoingTelegramMessageHandler(EventHandler):
     """subscribes to send-message events and forwards them to the telegram Bot API."""
 
     def __init__(self, token: Optional[str]) -> None:

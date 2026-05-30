@@ -3,8 +3,8 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from entity.dto import ChatType, TelegramMessageDTO
-from handler.send_telegram_messages_handler import SendTelegramMessagesHandler
-from interface.event_type import EventType
+from handler.outgoing_telegram_message_handler import OutgoingTelegramMessageHandler
+from interface.enum_type import EventType
 
 
 @pytest.fixture()
@@ -16,8 +16,8 @@ def mock_bus() -> MagicMock:
 
 
 @pytest.fixture()
-def handler(mock_bus: MagicMock) -> SendTelegramMessagesHandler:
-    h = SendTelegramMessagesHandler(token="fake_token")
+def handler(mock_bus: MagicMock) -> OutgoingTelegramMessageHandler:
+    h = OutgoingTelegramMessageHandler(token="fake_token")
     h.init(mock_bus)
     return h
 
@@ -35,7 +35,7 @@ def _make_message(chat_type: str = ChatType.PRIVATE) -> TelegramMessageDTO:
 class TestSendTelegramMessagesHandlerInit:
     def test_init_returns_true_on_success(self, mock_bus: MagicMock) -> None:
         # arrange
-        h = SendTelegramMessagesHandler(token="tok")
+        h = OutgoingTelegramMessageHandler(token="tok")
 
         # act
         result = h.init(mock_bus)
@@ -47,7 +47,7 @@ class TestSendTelegramMessagesHandlerInit:
         self, mock_bus: MagicMock
     ) -> None:
         # arrange
-        h = SendTelegramMessagesHandler(token="tok")
+        h = OutgoingTelegramMessageHandler(token="tok")
 
         # act
         h.init(mock_bus)
@@ -61,13 +61,13 @@ class TestSendTelegramMessagesHandlerInit:
 
 class TestSendTelegramMessagesHandlerHandle:
     async def test_handle_sending_telegram_message_skips_non_private_chat(
-        self, handler: SendTelegramMessagesHandler
+        self, handler: OutgoingTelegramMessageHandler
     ) -> None:
         # arrange
         message = _make_message(chat_type=ChatType.GROUP)
 
         # act - must return without calling the Bot API
-        with patch("handler.send_telegram_messages_handler.Bot") as mock_bot_cls:
+        with patch("handler.outgoing_telegram_message_handler.Bot") as mock_bot_cls:
             await handler.handle_sending_telegram_message(message)
 
         # assert
@@ -75,7 +75,7 @@ class TestSendTelegramMessagesHandlerHandle:
 
     async def test_handle_sending_telegram_message_logs_warning_for_non_private(
         self,
-        handler: SendTelegramMessagesHandler,
+        handler: OutgoingTelegramMessageHandler,
         caplog: pytest.LogCaptureFixture,
     ) -> None:
         # arrange
@@ -83,7 +83,7 @@ class TestSendTelegramMessagesHandlerHandle:
         message = _make_message(chat_type=ChatType.SUPERGROUP)
 
         # act
-        with patch("handler.send_telegram_messages_handler.Bot"):
+        with patch("handler.outgoing_telegram_message_handler.Bot"):
             with caplog.at_level(logging.WARNING, logger="SendTelegramMessagesHandler"):
                 await handler.handle_sending_telegram_message(message)
 
@@ -91,7 +91,7 @@ class TestSendTelegramMessagesHandlerHandle:
         assert any("supergroup" in r.message for r in caplog.records)
 
     async def test_handle_sending_telegram_message_sends_message_for_private_chat(
-        self, handler: SendTelegramMessagesHandler
+        self, handler: OutgoingTelegramMessageHandler
     ) -> None:
         # arrange
         message = _make_message(chat_type=ChatType.PRIVATE)
@@ -100,7 +100,7 @@ class TestSendTelegramMessagesHandlerHandle:
         mock_bot.__aexit__ = AsyncMock(return_value=False)
 
         # act
-        with patch("handler.send_telegram_messages_handler.Bot", return_value=mock_bot):
+        with patch("handler.outgoing_telegram_message_handler.Bot", return_value=mock_bot):
             await handler.handle_sending_telegram_message(message)
 
         # assert
@@ -112,7 +112,7 @@ class TestSendTelegramMessagesHandlerHandle:
         self, mock_bus: MagicMock
     ) -> None:
         # arrange - handler initialized with no token
-        h = SendTelegramMessagesHandler(token=None)
+        h = OutgoingTelegramMessageHandler(token=None)
         h.init(mock_bus)
         message = _make_message(chat_type="private")
 

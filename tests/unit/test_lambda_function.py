@@ -4,10 +4,10 @@ import logging
 
 import pytest
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 from entity.dto import TelegramMessageDTO
-from interface.event_type import EventType
+from interface.enum_type import EventType
 from lambda_function import lambda_handler
 
 
@@ -175,7 +175,7 @@ class TestLambdaHandlerPublishing:
         # assert
         mock_publish.assert_awaited_once()
         event_type, _ = mock_publish.call_args.args
-        assert event_type == EventType.INCOMING_TELEGRAM_MESSAGE
+        assert event_type == EventType.INCOMING_USER_MESSAGE
 
     def test_lambda_handler_publishes_dto_with_correct_message_id(self) -> None:
         # arrange

@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 from botocore.exceptions import ClientError
 
 from entity.models import ChatMessage
-from repository.message_repository import ChatMessageRepository
+from repository.user_message_repository import UserMessageRepository
 
 
 # ---------------------------------------------------------------------------
@@ -63,8 +63,8 @@ def dynamodb_table():
 
 
 @pytest.fixture()
-def repo(dynamodb_table) -> ChatMessageRepository:
-    return ChatMessageRepository(table=dynamodb_table)
+def repo(dynamodb_table) -> UserMessageRepository:
+    return UserMessageRepository(table=dynamodb_table)
 
 
 # ---------------------------------------------------------------------------
@@ -72,7 +72,7 @@ def repo(dynamodb_table) -> ChatMessageRepository:
 # ---------------------------------------------------------------------------
 
 class TestSave:
-    def test_save_valid_message_returns_true(self, repo: ChatMessageRepository) -> None:
+    def test_save_valid_message_returns_true(self, repo: UserMessageRepository) -> None:
         # arrange
         message = _make_message()
 
@@ -83,7 +83,7 @@ class TestSave:
         assert result is True
 
     def test_save_valid_message_persists_item(
-        self, repo: ChatMessageRepository, dynamodb_table
+        self, repo: UserMessageRepository, dynamodb_table
     ) -> None:
         # arrange
         message = _make_message(message_id=7, text="persisted")
@@ -105,7 +105,7 @@ class TestSave:
             {"Error": {"Code": "ProvisionedThroughputExceededException", "Message": "throttled"}},
             "PutItem",
         )
-        repo = ChatMessageRepository(table=mock_table)
+        repo = UserMessageRepository(table=mock_table)
         message = _make_message()
 
         # act
@@ -121,7 +121,7 @@ class TestSave:
 
 class TestGetByChatId:
     def test_get_by_chat_id_returns_chat_message_instances(
-        self, repo: ChatMessageRepository
+        self, repo: UserMessageRepository
     ) -> None:
         # arrange
         repo.save(_make_message(message_id=1, timestamp=1_000))
@@ -134,7 +134,7 @@ class TestGetByChatId:
         assert all(isinstance(r, ChatMessage) for r in results)
 
     def test_get_by_chat_id_returns_correct_field_values(
-        self, repo: ChatMessageRepository
+        self, repo: UserMessageRepository
     ) -> None:
         # arrange
         repo.save(_make_message(message_id=5, username="bob", text="hi", timestamp=3_000))
@@ -153,7 +153,7 @@ class TestGetByChatId:
         assert msg.timestamp == 3_000
 
     def test_get_by_chat_id_returns_empty_list_when_no_items(
-        self, repo: ChatMessageRepository
+        self, repo: UserMessageRepository
     ) -> None:
         # arrange - table is empty
 
@@ -170,7 +170,7 @@ class TestGetByChatId:
             {"Error": {"Code": "ResourceNotFoundException", "Message": "table not found"}},
             "Query",
         )
-        repo = ChatMessageRepository(table=mock_table)
+        repo = UserMessageRepository(table=mock_table)
 
         # act
         results = repo.get_by_chat_id(_CHAT_ID)
@@ -185,7 +185,7 @@ class TestGetByChatId:
 
 class TestGetByChatIdInRange:
     def test_get_by_chat_id_in_range_returns_only_messages_within_range(
-        self, repo: ChatMessageRepository
+        self, repo: UserMessageRepository
     ) -> None:
         # arrange
         repo.save(_make_message(message_id=1, timestamp=1_000))
@@ -200,7 +200,7 @@ class TestGetByChatIdInRange:
         assert results[0].message_id == 2
 
     def test_get_by_chat_id_in_range_returns_chat_message_instances(
-        self, repo: ChatMessageRepository
+        self, repo: UserMessageRepository
     ) -> None:
         # arrange
         repo.save(_make_message(message_id=1, timestamp=1_000))
@@ -212,7 +212,7 @@ class TestGetByChatIdInRange:
         assert all(isinstance(r, ChatMessage) for r in results)
 
     def test_get_by_chat_id_in_range_returns_empty_list_when_no_items_in_range(
-        self, repo: ChatMessageRepository
+        self, repo: UserMessageRepository
     ) -> None:
         # arrange
         repo.save(_make_message(message_id=1, timestamp=1_000))
@@ -230,7 +230,7 @@ class TestGetByChatIdInRange:
             {"Error": {"Code": "ResourceNotFoundException", "Message": "table not found"}},
             "Query",
         )
-        repo = ChatMessageRepository(table=mock_table)
+        repo = UserMessageRepository(table=mock_table)
 
         # act
         results = repo.get_by_chat_id_in_range(_CHAT_ID, 0, 9_999)
