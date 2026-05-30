@@ -1,28 +1,23 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+import dataclasses
+
+from dataclasses import dataclass
+from typing import Optional
 
 
-class TelegramFromModel(BaseModel):
+@dataclass(frozen=True)
+class ChatMessage:
+    """immutable carrier for a single chat message payload."""
+
+    message_id: Optional[int]
+    chat_id: int
     username: str
-
-
-class TelegramChatModel(BaseModel):
-    id: int
-    type: str
-
-
-class TelegramMessageModel(BaseModel):
-    # alias maps telegram's "from" key (reserved word in python) to from_
-    model_config = ConfigDict(populate_by_name=True)
-
-    message_id: int
     text: str
-    from_: TelegramFromModel = Field(alias="from")
-    chat: TelegramChatModel
+    chat_type: str  # plain str as telegram may send values outside ChatType
+    timestamp: int = 0
+    raw_payload: dict[str, object] = dataclasses.field(default_factory=dict)
 
-
-class TelegramUpdateModel(BaseModel):
-    update_id: int
-    message: TelegramMessageModel
-
+    def serialize(self) -> dict[str, object]:
+        """return a json-serializable dict of all dto fields."""
+        return dataclasses.asdict(self)

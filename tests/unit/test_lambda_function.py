@@ -1,37 +1,60 @@
+import asyncio
 import json
 import logging
-from unittest.mock import patch
 
 import pytest
 
-from lambda_function import lambda_handler
-from interface.event_type import EventType
+from unittest.mock import AsyncMock, MagicMock, patch
 
+from entity.dto import TelegramMessageDTO
+from interface.event_type import EventType
+from lambda_function import lambda_handler
+
+
+# ---------------------------------------------------------------------------
+# helpers
+# ---------------------------------------------------------------------------
 
 def _make_event(body: object) -> dict:
     """wrap body in a minimal api gateway proxy event dict."""
     return {"body": json.dumps(body)}
 
 
-VALID_TELEGRAM_BODY = {
+def _close_coro(coro: object) -> None:
+    """close a coroutine immediately so gc does not emit ResourceWarnings."""
+    if hasattr(coro, "close"):
+        coro.close()  # type: ignore[union-attr]
+
+
+def _run_coro(coro: object) -> None:
+    """run a coroutine in a fresh event loop so we can inspect publish calls."""
+    loop = asyncio.new_event_loop()
+    try:
+        loop.run_until_complete(coro)  # type: ignore[arg-type]
+    finally:
+        loop.close()
+
+
+VALID_TELEGRAM_BODY: dict = {
     "update_id": 123,
     "message": {
         "message_id": 1,
         "text": "hello",
         "from": {"username": "alice"},
         "chat": {"id": 42, "type": "private"},
+        "date": 1780000000,
     },
 }
 
+
+# ---------------------------------------------------------------------------
+# response status codes
+# ---------------------------------------------------------------------------
 
 class TestLambdaHandlerResponse:
     def test_lambda_handler_valid_telegram_message_returns_200(self) -> None:
         # arrange
         event = _make_event(VALID_TELEGRAM_BODY)
-
-        def _close_coro(coro: object) -> None:
-            if hasattr(coro, "close"):
-                coro.close()  # type: ignore[union-attr]
 
         # act
         with patch("lambda_function.asyncio.run", side_effect=_close_coro):
@@ -108,16 +131,27 @@ class TestLambdaHandlerResponse:
         assert result["statusCode"] == 400
         assert "Invalid payload" in result["body"]
 
+    def test_lambda_handler_unhandled_exception_returns_500(self) -> None:
+        # arrange - force an unexpected error after json parsing
+        event = _make_event(VALID_TELEGRAM_BODY)
+
+        # act
+        with patch("lambda_function.TelegramUpdateModel.model_validate", side_effect=RuntimeError("boom")):
+            result = lambda_handler(event, {})
+
+        # assert
+        assert result["statusCode"] == 500
+        assert "Internal server error" in result["body"]
+
+
+# ---------------------------------------------------------------------------
+# publishing behaviour
+# ---------------------------------------------------------------------------
 
 class TestLambdaHandlerPublishing:
     def test_lambda_handler_valid_telegram_body_calls_asyncio_run(self) -> None:
         # arrange
         event = _make_event(VALID_TELEGRAM_BODY)
-
-        def _close_coro(coro: object) -> None:
-            # close the coroutine immediately so gc does not emit ResourceWarnings
-            if hasattr(coro, "close"):
-                coro.close()  # type: ignore[union-attr]
 
         # act
         with patch("lambda_function.asyncio.run", side_effect=_close_coro) as mock_run:
@@ -126,25 +160,107 @@ class TestLambdaHandlerPublishing:
         # assert
         mock_run.assert_called_once()
 
-    def test_lambda_handler_publishes_incoming_telegram_message_event_with_correct_type(
+    def test_lambda_handler_publishes_incoming_telegram_message_event_type(
         self,
     ) -> None:
-        # arrange - capture the coroutine passed to asyncio.run and inspect it
+        # arrange
         event = _make_event(VALID_TELEGRAM_BODY)
-        captured_coro = {}
+        mock_publish = AsyncMock()
 
-        def capture_run(coro: object) -> None:
-            captured_coro["coro"] = coro
-            # close the coroutine to avoid ResourceWarning
-            if hasattr(coro, "close"):
-                coro.close()  # type: ignore[union-attr]
+        # act - run the real coroutine so publish is actually awaited
+        with patch("lambda_function.async_event_bus.publish", mock_publish):
+            with patch("lambda_function.asyncio.run", side_effect=_run_coro):
+                lambda_handler(event, {})
+
+        # assert
+        mock_publish.assert_awaited_once()
+        event_type, _ = mock_publish.call_args.args
+        assert event_type == EventType.INCOMING_TELEGRAM_MESSAGE
+
+    def test_lambda_handler_publishes_dto_with_correct_message_id(self) -> None:
+        # arrange
+        event = _make_event(VALID_TELEGRAM_BODY)
+        mock_publish = AsyncMock()
 
         # act
-        with patch("lambda_function.asyncio.run", side_effect=capture_run):
-            lambda_handler(event, {})
+        with patch("lambda_function.async_event_bus.publish", mock_publish):
+            with patch("lambda_function.asyncio.run", side_effect=_run_coro):
+                lambda_handler(event, {})
 
-        # assert - asyncio.run must have been called with a coroutine
-        assert "coro" in captured_coro
+        # assert
+        _, dto = mock_publish.call_args.args
+        assert isinstance(dto, TelegramMessageDTO)
+        assert dto.message_id == VALID_TELEGRAM_BODY["message"]["message_id"]
+
+    def test_lambda_handler_publishes_dto_with_correct_chat_id(self) -> None:
+        # arrange
+        event = _make_event(VALID_TELEGRAM_BODY)
+        mock_publish = AsyncMock()
+
+        # act
+        with patch("lambda_function.async_event_bus.publish", mock_publish):
+            with patch("lambda_function.asyncio.run", side_effect=_run_coro):
+                lambda_handler(event, {})
+
+        # assert
+        _, dto = mock_publish.call_args.args
+        assert dto.chat_id == VALID_TELEGRAM_BODY["message"]["chat"]["id"]
+
+    def test_lambda_handler_publishes_dto_with_correct_text(self) -> None:
+        # arrange
+        event = _make_event(VALID_TELEGRAM_BODY)
+        mock_publish = AsyncMock()
+
+        # act
+        with patch("lambda_function.async_event_bus.publish", mock_publish):
+            with patch("lambda_function.asyncio.run", side_effect=_run_coro):
+                lambda_handler(event, {})
+
+        # assert
+        _, dto = mock_publish.call_args.args
+        assert dto.text == VALID_TELEGRAM_BODY["message"]["text"]
+
+    def test_lambda_handler_publishes_dto_with_correct_username(self) -> None:
+        # arrange
+        event = _make_event(VALID_TELEGRAM_BODY)
+        mock_publish = AsyncMock()
+
+        # act
+        with patch("lambda_function.async_event_bus.publish", mock_publish):
+            with patch("lambda_function.asyncio.run", side_effect=_run_coro):
+                lambda_handler(event, {})
+
+        # assert
+        _, dto = mock_publish.call_args.args
+        assert dto.username == VALID_TELEGRAM_BODY["message"]["from"]["username"]
+
+    def test_lambda_handler_publishes_dto_with_correct_timestamp(self) -> None:
+        # arrange
+        event = _make_event(VALID_TELEGRAM_BODY)
+        mock_publish = AsyncMock()
+
+        # act
+        with patch("lambda_function.async_event_bus.publish", mock_publish):
+            with patch("lambda_function.asyncio.run", side_effect=_run_coro):
+                lambda_handler(event, {})
+
+        # assert
+        _, dto = mock_publish.call_args.args
+        assert dto.timestamp == VALID_TELEGRAM_BODY["message"]["date"]
+
+    def test_lambda_handler_publishes_dto_with_message_as_raw_payload(self) -> None:
+        # arrange
+        event = _make_event(VALID_TELEGRAM_BODY)
+        mock_publish = AsyncMock()
+
+        # act
+        with patch("lambda_function.async_event_bus.publish", mock_publish):
+            with patch("lambda_function.asyncio.run", side_effect=_run_coro):
+                lambda_handler(event, {})
+
+        # assert
+        _, dto = mock_publish.call_args.args
+        assert dto.raw_payload == VALID_TELEGRAM_BODY["message"]
 
     def test_lambda_handler_body_without_update_id_does_not_call_asyncio_run(
         self,
@@ -159,6 +275,10 @@ class TestLambdaHandlerPublishing:
         # assert
         mock_run.assert_not_called()
 
+
+# ---------------------------------------------------------------------------
+# logging
+# ---------------------------------------------------------------------------
 
 class TestLambdaHandlerLogging:
     def test_lambda_handler_logs_incoming_request(
@@ -187,3 +307,18 @@ class TestLambdaHandlerLogging:
 
         # assert
         assert any(r.levelno == logging.ERROR for r in caplog.records)
+
+    def test_lambda_handler_logs_error_on_unhandled_exception(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # arrange
+        event = _make_event(VALID_TELEGRAM_BODY)
+
+        # act
+        with patch("lambda_function.TelegramUpdateModel.model_validate", side_effect=RuntimeError("boom")):
+            with caplog.at_level(logging.ERROR, logger="lambda_function"):
+                lambda_handler(event, {})
+
+        # assert
+        assert any(r.levelno == logging.ERROR for r in caplog.records)
+

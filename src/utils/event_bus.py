@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import logging
 
@@ -13,10 +15,9 @@ class AsyncEventBus(EventBus):
     uses :class:`asyncio.TaskGroup` (Python 3.11+) so all handlers run
     concurrently and a single failing handler never blocks its siblings.
     """
+    _instance: AsyncEventBus | None = None
 
-    _instance: "AsyncEventBus | None" = None
-
-    def __new__(cls) -> "AsyncEventBus":
+    def __new__(cls) -> AsyncEventBus:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance

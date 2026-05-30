@@ -1,6 +1,8 @@
 import logging
 
 from entity.dto import TelegramMessageDTO
+from entity.models import ChatMessage
+from interface.dynamodb_repository import IChatMessageRepository
 from interface.event_bus import EventBus
 from interface.event_handler import EventHandler
 from interface.event_type import EventType
@@ -9,9 +11,10 @@ from interface.event_type import EventType
 class IncomingTelegramMessagesHandler(EventHandler):
     """subscribes to incoming messages and re-publishes an echo reply."""
 
-    def __init__(self) -> None:
+    def __init__(self, messages_repo: IChatMessageRepository) -> None:
         self._event_bus: EventBus | None = None
         self._logger = logging.getLogger(self.__class__.__name__)
+        self._messages_repo: IChatMessageRepository | None = messages_repo
 
     def init(self, event_bus: EventBus) -> bool:
         """subscribe to EventType.INCOMING_TELEGRAM_MESSAGE on event_bus."""
@@ -23,15 +26,15 @@ class IncomingTelegramMessagesHandler(EventHandler):
         return True
 
     async def handle_incoming_telegram_message(self, message: TelegramMessageDTO) -> None:
-        """echo the original message text back to the sender via the bus."""
-        self._logger.info(f"received incoming telegram message: {message}")
-
-        # dispatch reply back through the bus so the send handler can deliver it
-        reply = TelegramMessageDTO(
-            message_id=None,
+        """store incoming telegram messages into message repository."""
+        self._logger.info(f"received incoming telegram message: {message.message_id}")
+        self._messages_repo.save(ChatMessage(
+            message_id=message.message_id,
             chat_id=message.chat_id,
-            text=f"got: {message.text}",
+            text=message.text,
             chat_type=message.chat_type,
             username=message.username,
-        )
-        await self._event_bus.publish(EventType.SEND_TELEGRAM_MESSAGE, reply)
+            timestamp=message.timestamp,
+            raw_payload=message.raw_payload,
+        ))
+        self._logger.info(f"saved message to repository: {message.message_id}")

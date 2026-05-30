@@ -23,6 +23,8 @@ class TelegramMessageDTO:
     username: str
     text: str
     chat_type: str  # plain str as telegram may send values outside ChatType
+    timestamp: int = 0
+    raw_payload: dict[str, object] = dataclasses.field(default_factory=dict)
 
     def serialize(self) -> dict[str, object]:
         """return a json-serializable dict of all dto fields."""

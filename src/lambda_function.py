@@ -2,25 +2,36 @@ import os
 import json
 import asyncio
 import logging
+
+import boto3
+
 from typing import Any
 
 from pydantic import ValidationError
 
 from entity.dto import TelegramMessageDTO
-from entity.models import TelegramUpdateModel
+from entity.telegram import TelegramUpdateModel
 from handler.incoming_telegram_messages_handler import IncomingTelegramMessagesHandler
 from handler.send_telegram_messages_handler import SendTelegramMessagesHandler
 from interface.event_type import EventType
+from repository.message_repository import ChatMessageRepository
 from utils.event_bus import async_event_bus
 
 
 logging.getLogger().setLevel(logging.INFO)
 logger = logging.getLogger("lambda_function")
 
+# env vars
 BOT_TOKEN: str | None = os.getenv("BOT_TOKEN")
+DYNAMODB_MESSAGES_TABLE: str | None = os.getenv("DYNAMODB_TABLE_MESSAGES")
+
+# dynamodb
+DYNAMODB = boto3.resource("dynamodb")
+MESSAGES_TABLE = DYNAMODB.Table(DYNAMODB_MESSAGES_TABLE)
+chat_message_repository = ChatMessageRepository(MESSAGES_TABLE)
 
 # handlers are singletons registering once at cold-start avoids re-subscription
-IncomingTelegramMessagesHandler().init(async_event_bus)
+IncomingTelegramMessagesHandler(chat_message_repository).init(async_event_bus)
 SendTelegramMessagesHandler(BOT_TOKEN).init(async_event_bus)
 
 
@@ -46,6 +57,8 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
                 chat_id=update.message.chat.id,
                 chat_type=update.message.chat.type,
                 username=update.message.from_.username,
+                timestamp=update.message.date,
+                raw_payload=body.get("message", {}),
             )
             asyncio.run(publish_async(EventType.INCOMING_TELEGRAM_MESSAGE, telegram_message))
 

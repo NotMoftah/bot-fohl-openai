@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AgentCommandResponse",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1.0"
+      ],
+      "description": "The schema version, strictly 'v1.0'."
+    },
+    "commands": {
+      "type": "array",
+      "description": "A list of structured commands extracted from the chat history.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "string",
+            "enum": [
+              "Reminder",
+              "Exception"
+            ],
+            "description": "The specific action the agent must take."
+          },
+          "parameters": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "An ordered list of string arguments for the command. Leave empty if no parameters are required."
+          }
+        },
+        "required": [
+          "command",
+          "parameters"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "version",
+    "commands"
+  ],
+  "additionalProperties": false
+}
