@@ -18,7 +18,7 @@ class TelegramMessageModel(BaseModel):
 
     message_id: int
     date: int
-    text: str
+    text: str | None
     from_: TelegramFromModel = Field(alias="from")
     chat: TelegramChatModel
 

@@ -48,6 +48,7 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     try:
         body: dict[str, Any] = json.loads(event.get("body", "{}"))
         logger.info(f"incoming request received (keys={list(body.keys())})")
+        logger.info(f"full payload: {json.dumps(body, indent=2)}")
 
         if "update_id" in body and "message" in body:
             update = TelegramUpdateModel.model_validate(body)
