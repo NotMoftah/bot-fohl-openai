@@ -12,22 +12,22 @@ from repository.user_message_repository import UserMessageRepository
 def main() -> None:
     """read credentials from environment and query the dynamodb table."""
     # region and table name from environment
-    table_name = os.environ.get("DYNAMODB_TABLE", "")
-    region = os.environ.get("AWS_REGION", "eu-central-1")
-    chat_id = 579254966
+    user_messages_table_name = os.environ.get("TABLE_USER_MSG")
+    region = os.environ.get("AWS_REGION")
+    chat_id = int(os.environ.get("CHAT_ID"))
 
-    if not table_name:
+    if not user_messages_table_name:
         print("error: DYNAMODB_TABLE variable not set.")
         sys.exit(1)
 
     # uses local credentials from ~/.aws/credentials or environment variables
     # (e.g., AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
     dynamodb = boto3.resource("dynamodb", region_name=region)
-    table = dynamodb.Table(table_name)
+    table = dynamodb.Table(user_messages_table_name)
     repo = UserMessageRepository(table)
 
     # example params - modify these for your manual test
-    print(f"querying table '{table_name}' in region '{region}' for chat {chat_id}...")
+    print(f"querying table '{user_messages_table_name}' in region '{region}' for chat {chat_id}...")
 
     try:
         messages = repo.get_by_chat_id(chat_id=chat_id)
